@@ -21,31 +21,25 @@ States: `PROPOSED` · `READY` · `IN PROGRESS` · `BLOCKED` · `REVIEW` · `DONE
 | P2 | Publish deterministic security and failure fixtures | QSOBuilder | P1 | PROPOSED | Positive, negative, boundary, timeout, tamper, interruption, and rollback fixtures pass with retained hashes and reports. |
 | P3 | Validate upstream compatibility without importing authority | Builder | QSO-GENOMES accepted manifest and QuantumStateObjects runnable baseline | BLOCKED | Genome/runtime manifests are checked by schema version and hash; missing or incompatible artifacts fail closed; external code is not imported or executed. |
 
-## Scope conflict: repository bootstrap automation
+## Closed scope conflict: repository bootstrap automation
 
-Draft PR #1 proposes a scheduled owner-wide automation that writes generic Markdown files and issues to other repositories using a broad token. That capability is not part of the current QSO-FABRIC MVP and must not displace P0–P3 without an approved product decision.
+PR #1 proposed scheduled owner-wide automation that would write generic Markdown files and issues to other repositories using a broad token. The pull request was closed on 2026-07-16. No portfolio-bootstrap capability is accepted, scheduled, deployed, or part of the QSO-FABRIC runtime MVP, and P0–P3 retain their existing priority.
 
-Before any such automation can be considered, it must:
+The review evidence remains preserved for any future control-plane proposal. Any successor must:
 
 - be explicitly opt-in per repository rather than scanning all owned repositories by default;
 - default scheduled and manual runs to dry-run;
 - avoid duplicate sources of truth such as `TASK_CHAIN.md` alongside an existing `taskchain.md`;
 - create reviewable per-repository pull requests rather than writing directly to default branches;
-- use least-privilege credentials and document revocation, audit, retry, and rollback behavior;
+- use least-privilege credentials and document revocation, audit, retry, checkpoint, and rollback behavior;
 - respect repository-specific holds, fork identity, licensing, and product directives;
+- correctly distinguish user-owned and organization-owned repositories;
+- paginate idempotency checks and surface every failed write;
+- skip disabled repository features safely;
+- throttle mutations and recover or roll back partial runs;
 - live in a dedicated governance/control repository unless ownership by QSO-FABRIC is explicitly approved.
 
-### Current PR #1 reliability blockers
-
-Five unresolved review findings further prevent acceptance even as a separate control-plane proposal:
-
-- organization owners are queried through a user-owned repository endpoint and can silently produce an empty target set;
-- orientation-issue detection reads only the first 100 issues/PRs and can create duplicates;
-- the shared API helper treats write-operation `404` responses as missing resources, allowing false-success reports;
-- repositories with Issues disabled are not skipped, causing repeated partial-run failures;
-- mutating API calls have no throttling, retry, or resumable checkpoint design, risking secondary-rate-limit interruption and partially modified portfolios.
-
-These findings reinforce the existing decision to keep PR #1 outside the runtime MVP. They do not change P0–P3 priority.
+The five unresolved review findings for organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling are retained as rejected-proposal evidence, not active runtime blockers.
 
 ## Builder rules
 
@@ -55,5 +49,6 @@ Execute only the highest-priority unblocked task. Preserve the existing bounded 
 
 Record commits, Python/tool versions, commands/results, workflow URLs, seeds, fixture and artifact hashes, failures, limits, rollback evidence, and follow-ups.
 
-- 2026-07-16 — Product review retained the runtime-verification priority and classified draft PR #1 as an out-of-scope portfolio-governance proposal requiring redesign or relocation before approval.
-- 2026-07-16 — Recorded five unresolved PR #1 reliability findings covering organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling/recovery; no portfolio reprioritization was made.
+- 2026-07-16 — Product review retained the runtime-verification priority and classified PR #1 as an out-of-scope portfolio-governance proposal requiring redesign or relocation before approval.
+- 2026-07-16 — Recorded five PR #1 reliability findings covering organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling/recovery; no portfolio reprioritization was made.
+- 2026-07-16 — Recorded closure of PR #1. The current scope conflict is resolved by exclusion; no bootstrap capability was accepted, and QSO-FABRIC remains focused on the bounded runtime baseline.
