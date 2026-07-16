@@ -1,0 +1,50 @@
+name: Muse Repository Bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      owner:
+        description: GitHub owner to scan
+        required: false
+        default: aevespers2
+      dry_run:
+        description: Report changes without writing
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: muse-repository-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply canonical Muse files to owned repositories
+        env:
+          GH_TOKEN: ${{ secrets.MUSE_REPO_TOKEN }}
+          MUSE_OWNER: ${{ inputs.owner || 'aevespers2' }}
+          MUSE_DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          MUSE_CONTROL_REPO: ${{ github.repository }}
+        run: python .github/scripts/muse_repo_bootstrap.py
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: muse-bootstrap-report
+          path: muse-bootstrap-report.json
+          if-no-files-found: ignore
