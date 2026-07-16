@@ -1,77 +1,73 @@
 # Release Plan
 
 ## Current Decision
+
 Status: `BLOCKED — UNVERIFIED RUNTIME BASELINE`
 
-QSO-FABRIC is no longer empty. Reviewed implementation head `7c36883c649041a8d041c48b7eb415584ae3fb39` contains a bounded four-QSO Python runtime, a CLI-style experiment runner, three pytest cases, and a least-privilege GitHub Actions workflow. No release is eligible because `taskchain.md` and `punchlist.md` are absent, no task is accepted as `DONE`, no current workflow result or independent test report is attached, and packaging, security, documentation, provenance, licensing, artifacts, and repository-specific limit/rollback evidence remain incomplete.
+QSO-FABRIC contains a bounded four-QSO Python runtime, a CLI-style experiment runner, three pytest cases, and a least-privilege GitHub Actions workflow. The task chain now formally defines the runtime as a reproducible integration harness, but no release is eligible because P0 remains `READY`, `punchlist.md` is absent, candidate head `cb624f246c75c888fc2949694ccd892564502258` lacks current CI/test evidence, and package, license, contract versioning, security, rollback, provenance, and upstream compatibility gates remain incomplete.
 
 ## Versioning
-- Scheme: Semantic Versioning after package identity, supported Python versions, license, and ecosystem contract boundaries are approved.
-- First eligible runtime candidate: `0.1.0-alpha.1`.
-- Deterministic output, ledger, event, limit, freeze-point, and report formats must be explicitly versioned before consumer compatibility is claimed.
-- Do not tag merely because source, tests, and a workflow exist; the immutable candidate commit must satisfy every acceptance gate.
 
-## Candidate Scope
-- Bounded Atlas, Nova, Orion, and Lyra runtime with deterministic seeded behavior.
-- Append-only hash-chained event ledger and verifiable final event hash.
-- Explicit limits for rounds, per-QSO messages, message size, and runtime.
-- Freeze-point state hashes and per-QSO observations, inferences, messages, and proposals.
-- Library and CLI smoke behavior with deterministic positive, negative, boundary, timeout, and tamper fixtures.
-- Versioned integration boundary with QuantumStateObjects and QSO-GENOMES without importing executable authority.
-- Reproducible tests, static validation, security review, documentation, artifacts, checksums, provenance, and rollback evidence.
+- Scheme: Semantic Versioning after package identity, supported Python versions, license, and contract boundaries are defined.
+- First eligible candidate: `0.1.0-alpha.1`.
+- Event, ledger, freeze-point, limit, and report formats must be explicitly versioned and canonicalized.
+- Do not tag until the immutable candidate commit satisfies every gate.
 
-## Existing Candidate Assets
-- `qso_runtime/four_qso_experiment.py` implements the bounded experiment, ledger verification, freeze points, deterministic seeded selection, message routing, and JSON report generation.
-- `qso_runtime/__init__.py` exposes `ExperimentLimits` and `run_experiment`.
-- `tests/test_four_qso_experiment.py` contains deterministic replay, message/freeze-point, ledger, and Nova verification assertions.
-- `.github/workflows/four-qso-ci.yml` defines Python 3.11 pytest and smoke checks with `contents: read`, disabled checkout credentials, concurrency control, and a ten-minute job timeout.
-- `README.md` documents a run command and a non-operational safety boundary.
+## Release Scope
 
-These files are candidate implementation inputs, not releasable completed work until the results and controls below are independently reproduced and tied to one immutable commit.
+- Bounded Atlas, Nova, Orion, and Lyra experiment with deterministic seeds and explicit resource limits.
+- Append-only hash-chained event ledger, freeze-point hashes, messages, and final report.
+- Package/environment definition and versioned event/ledger/freeze/report contracts.
+- Positive, negative, boundary, timeout, tamper, interruption, determinism, and rollback fixtures.
+- Read-only hash/version compatibility with QSO-GENOMES and QuantumStateObjects without importing execution authority.
 
 ## Selected Completed Work
-None selected for release. The implementation, tests, and workflow are present, but there is no approved task chain, completed punch-list evidence, current CI/test record, security report, package/license baseline, artifact bundle, or provenance manifest.
+
+None selected. The runtime, tests, workflow, and README are candidate implementation inputs, but no task is `DONE` and no complete evidence bundle verifies them at one immutable commit.
 
 ## Planned Changelog Entries
-- `Added`: verified bounded four-QSO runner, library API, CLI smoke path, deterministic report contract, and hash-chained ledger.
-- `Security`: resource-limit, timeout, untrusted-input, command/network/credential, repository-write, dependency, workflow-permission, and generated-artifact findings.
-- `Changed`: explicit event/report schema versions, canonicalization rules, compatibility contract, and failure semantics.
-- `Fixed`: determinism, ledger verification, message-cap, runtime-limit, freeze/rollback, or output-integrity defects found during baseline testing.
-- `Documentation`: supported environment, setup, exact commands, limits, trust boundaries, limitations, recovery, and consumer guidance.
-- `Release`: source/package artifacts, reports, SBOM where applicable, checksums, provenance, and approval decision.
+
+- `Added`: verified bounded four-QSO harness, package entry point, versioned output contracts, and fixture suite.
+- `Security`: limits, timeout, untrusted input, path, command/network/credential, repository-write, dependency, and workflow findings.
+- `Fixed`: determinism, ledger, freeze, timeout, message-cap, interruption, and rollback defects.
+- `Documentation`: supported environment, contracts, limits, trust boundaries, commands, failures, and recovery.
+- `Release`: package/source artifacts, reports, SBOM where applicable, checksums, provenance, and approval.
 
 ## Acceptance Gates
+
 | Gate | Status | Requirement |
 |---|---|---|
-| Task completion | FAIL | Create `taskchain.md` and `punchlist.md`; mark the bounded runtime baseline `DONE` with linked commits, commands, results, and rollback notes. |
-| Package/environment | FAIL | Define supported Python versions, package metadata/build method, dependency policy, license, and clean-environment installation. |
-| Tests/CI | NO CURRENT EVIDENCE | Full pytest and CLI smoke checks pass at the immutable candidate commit with retained logs. |
-| Determinism/integrity | PARTIAL | Seeded equality and ledger assertions exist; repeated cross-environment hashes, canonical JSON, ledger tamper, ordering, and timeout fixtures must pass. |
-| Limits/freeze/rollback | PARTIAL | Runtime/message limits and freeze hashes exist; boundary, exhaustion, interruption, recovery, and rollback behavior require evidence. |
-| Security | NO EVIDENCE | Secret, dependency, input, output-path, resource-exhaustion, command/network/credential, repository-write, workflow-permission, and supply-chain checks pass. |
-| Integration contracts | NO EVIDENCE | Versioned, hash-verified boundaries with QuantumStateObjects and QSO-GENOMES are documented and tested without granting external execution authority. |
-| Documentation | PARTIAL | README purpose and run command exist; install, API/report schema, supported matrix, failure modes, operations, artifact retention, and rollback remain unverified. |
-| Provenance | NO EVIDENCE | Candidate commit, Python/OS/tool versions, commands, exit codes, test reports, output hashes, SBOM, repository URL, and attestations are recorded. |
+| Task completion | FAIL | P0 is `DONE`; `punchlist.md` exists and included P1-P3 work has evidence. |
+| Package/environment | FAIL | Supported Python matrix, package/build definition, dependencies, license, and clean installation are verified. |
+| Tests/CI | NO CURRENT EVIDENCE | Full pytest and CLI smoke checks pass with retained logs at the candidate commit. |
+| Determinism/integrity | PARTIAL | Seeded replay and ledger assertions exist; cross-environment canonical hashes, tamper, ordering, and timeout fixtures must pass. |
+| Limits/freeze/rollback | PARTIAL | Limits and freeze hashes exist; exhaustion, interruption, recovery, and rollback require evidence. |
+| Security | NO EVIDENCE | Secret, dependency, input/path, resource, command/network/credential, repository-write, and supply-chain checks pass. |
+| Integration contracts | BLOCKED | Published QSO-GENOMES manifest and runnable QuantumStateObjects baseline are validated by version and hash. |
+| Documentation | PARTIAL | Purpose and run command exist; install, contracts, supported matrix, failure modes, retention, and rollback are unverified. |
+| Provenance | NO EVIDENCE | Commit, Python/OS/tool versions, commands, results, fixture/output hashes, SBOM, and attestations are retained. |
 | Approval | PENDING | Explicit release approval after all blocking gates pass. |
 
 ## Artifact Requirements
-- Reproducible source archive and Python package artifacts if packaging is included.
-- Versioned event, ledger, freeze-point, and report schemas or documented canonical contracts.
-- Positive, negative, boundary, timeout, tamper, determinism, and rollback fixture bundle.
-- Complete test, CLI smoke, static-validation, security, integration, and documentation reports.
-- Representative four-QSO report and ledger with no unapproved sensitive data.
-- SBOM where applicable, SHA-256 checksum manifest, and provenance record tied to the candidate commit.
+
+- Reproducible source archive and Python package artifacts.
+- Versioned event, ledger, freeze-point, limit, and report schemas/contracts.
+- Positive, negative, boundary, timeout, tamper, determinism, interruption, and rollback fixture bundle.
+- Complete test, CLI smoke, static, security, integration, and documentation reports.
+- Representative report/ledger, SBOM where applicable, SHA-256 checksums, and provenance manifest.
 
 ## Rollback Criteria
-Withdraw or roll back if deterministic runs diverge, ledger tampering is not detected, message/runtime limits can be bypassed, timeout or interruption corrupts evidence, freeze-point hashes are not reproducible, untrusted input gains command/network/credential/repository authority, integration contracts drift, documented commands fail, severe security findings remain, or artifact hashes differ. Restore the last verified tag or reviewed pre-release commit and preserve failed-candidate inputs, reports, logs, and hashes.
+
+Withdraw or roll back if seeded runs diverge, ledger tampering is undetected, limits can be bypassed, timeout/interruption corrupts evidence, freeze hashes are unstable, untrusted input gains authority, upstream contracts drift, documented commands fail, severe security findings remain, or artifact hashes differ. Restore the prior verified state and preserve failed-candidate inputs, logs, reports, and hashes.
 
 ## Unresolved Blockers
-- `taskchain.md` and `punchlist.md` do not exist, so no implementation work has formal completion or acceptance evidence.
-- No current GitHub Actions result or independent clean-environment pytest/CLI report is attached to the reviewed implementation head.
-- No `pyproject.toml`, package/build definition, dependency baseline, supported Python matrix, or license is present.
-- Security coverage is limited to workflow permissions and stated runtime boundaries; no adversarial, dependency, secret, path, resource-exhaustion, or supply-chain report exists.
-- Event/report schema versioning, canonical output rules, timeout behavior, ledger tamper fixtures, rollback procedure, artifact retention, checksums, SBOM, and provenance are absent.
-- Cross-repository genome/runtime compatibility has not been validated against a complete QSO-GENOMES contract set.
+
+- P0 remains `READY`; `punchlist.md` and accepted Builder evidence are absent.
+- No current CI, clean-environment pytest, or CLI smoke report is attached.
+- No package/build definition, supported Python matrix, dependency baseline, or license is present.
+- Adversarial, timeout, tamper, interruption, rollback, security, checksum, SBOM, and provenance evidence is absent.
+- Upstream compatibility is blocked by the incomplete QSO-GENOMES set and non-runnable QuantumStateObjects package.
 
 ## Release Log
-- 2026-07-16: Corrected the prior empty-repository assessment after identifying the bounded runtime, tests, and CI workflow; candidate remains `BLOCKED — UNVERIFIED RUNTIME BASELINE` pending task acceptance and complete release evidence.
+
+- 2026-07-16: Aligned the candidate with the bounded integration-harness directive; release remains blocked pending reproducible runtime and upstream-contract evidence.
