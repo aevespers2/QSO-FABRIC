@@ -35,6 +35,18 @@ Before any such automation can be considered, it must:
 - respect repository-specific holds, fork identity, licensing, and product directives;
 - live in a dedicated governance/control repository unless ownership by QSO-FABRIC is explicitly approved.
 
+### Current PR #1 reliability blockers
+
+Five unresolved review findings further prevent acceptance even as a separate control-plane proposal:
+
+- organization owners are queried through a user-owned repository endpoint and can silently produce an empty target set;
+- orientation-issue detection reads only the first 100 issues/PRs and can create duplicates;
+- the shared API helper treats write-operation `404` responses as missing resources, allowing false-success reports;
+- repositories with Issues disabled are not skipped, causing repeated partial-run failures;
+- mutating API calls have no throttling, retry, or resumable checkpoint design, risking secondary-rate-limit interruption and partially modified portfolios.
+
+These findings reinforce the existing decision to keep PR #1 outside the runtime MVP. They do not change P0–P3 priority.
+
 ## Builder rules
 
 Execute only the highest-priority unblocked task. Preserve the existing bounded runtime while adding evidence; do not widen scope to networking, external learning, payments, UI, or cross-repository governance automation without a recorded approval and revised product directive.
@@ -44,3 +56,4 @@ Execute only the highest-priority unblocked task. Preserve the existing bounded 
 Record commits, Python/tool versions, commands/results, workflow URLs, seeds, fixture and artifact hashes, failures, limits, rollback evidence, and follow-ups.
 
 - 2026-07-16 — Product review retained the runtime-verification priority and classified draft PR #1 as an out-of-scope portfolio-governance proposal requiring redesign or relocation before approval.
+- 2026-07-16 — Recorded five unresolved PR #1 reliability findings covering organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling/recovery; no portfolio reprioritization was made.
