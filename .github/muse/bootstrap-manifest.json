@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "source_root": ".github/muse/templates",
+  "managed_files": [
+    "TASK_CHAIN.md",
+    "MUSE.md",
+    "REPOSITORY_OBJECTIVES.md",
+    "SCHEDULED_TASKS.md"
+  ],
+  "exclude_repositories": [
+    "aevespers2/0",
+    "aevespers2/1"
+  ],
+  "issue_title": "Muse: repository orientation and task-chain review",
+  "issue_labels": ["muse", "automation", "repository-review"]
+}
