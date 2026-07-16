@@ -6,7 +6,7 @@ Status: `BLOCKED — UNVERIFIED RUNTIME AND SCOPE-CONFLICT REVIEW`
 
 QSO-FABRIC contains a bounded four-QSO Python runtime, a CLI-style experiment runner, three pytest cases, and a least-privilege GitHub Actions workflow. The task chain defines that runtime as a reproducible integration harness, but no release is eligible because P0 remains `READY`, `punchlist.md` is absent, candidate head `498d0035ad3b0a00aa1669691002b051942a6e7b` has no reported commit-status checks, and package, license, contract versioning, security, rollback, provenance, and upstream compatibility gates remain incomplete.
 
-Draft PR #1 is not part of the runtime candidate. It proposes scheduled owner-wide repository mutation using a broad token and direct default-branch writes, defaults scheduled execution to live writes, and can create duplicate planning sources such as `TASK_CHAIN.md` beside `taskchain.md`. It requires redesign or relocation and explicit approval before it can enter any release scope.
+Draft PR #1 is not part of the runtime candidate. It proposes scheduled owner-wide repository mutation using a broad token and direct default-branch writes, defaults scheduled execution to live writes, and can create duplicate planning sources such as `TASK_CHAIN.md` beside `taskchain.md`. Five additional unresolved review findings show that it can silently miss organization-owned repositories, duplicate orientation issues after the first issue page, report failed writes as successful after swallowed `404` responses, repeatedly fail on repositories with Issues disabled, and leave a portfolio partially modified when unthrottled write bursts hit secondary limits. It requires redesign or relocation and explicit approval before it can enter any release scope.
 
 ## Versioning
 
@@ -35,7 +35,7 @@ Draft PR #1 is not part of the runtime candidate. It proposes scheduled owner-wi
 ## Selected Completed Work
 
 - Selected as governance documentation only: the product-boundary decision that QSO-FABRIC is the bounded four-QSO integration harness and not the portfolio control plane.
-- Selected as review evidence only: the recorded security and scope findings for draft PR #1.
+- Selected as review evidence only: the recorded security, reliability, and scope findings for draft PR #1.
 - No executable runtime work is selected for release. The runtime, tests, workflow, and README remain candidate inputs because no task is `DONE` and no complete evidence bundle verifies them at one immutable commit.
 
 ## Planned Changelog Entries
@@ -52,6 +52,7 @@ Draft PR #1 is not part of the runtime candidate. It proposes scheduled owner-wi
 |---|---|---|
 | Task completion | FAIL | P0 is `DONE`; `punchlist.md` exists and included P1-P3 work has evidence. |
 | Scope and authority | FAIL | Draft PR #1 is closed, relocated, or redesigned as an independently approved opt-in control-plane release; no owner-wide mutation capability is included in the runtime candidate. |
+| Control-plane reliability | FAIL | Any separately approved redesign correctly handles user and organization owners, paginates idempotency checks, surfaces write failures, skips disabled features, throttles/retries mutations, and resumes or rolls back partial runs. |
 | Package/environment | FAIL | Supported Python matrix, package/build definition, dependencies, license, and clean installation are verified. |
 | Tests/CI | NO CURRENT EVIDENCE | Full pytest and CLI smoke checks pass with retained logs at candidate head `498d0035ad3b0a00aa1669691002b051942a6e7b`. |
 | Determinism/integrity | PARTIAL | Seeded replay and ledger assertions exist; cross-environment canonical hashes, tamper, ordering, and timeout fixtures must pass. |
@@ -69,11 +70,11 @@ Draft PR #1 is not part of the runtime candidate. It proposes scheduled owner-wi
 - Positive, negative, boundary, timeout, tamper, determinism, interruption, and rollback fixture bundle.
 - Complete test, CLI smoke, static, security, integration, and documentation reports.
 - Representative report/ledger, SBOM where applicable, SHA-256 checksums, and provenance manifest.
-- If portfolio bootstrap automation is pursued separately: opt-in repository manifest, dry-run evidence, per-repository pull-request flow, least-privilege token matrix, audit/retry/revocation/rollback design, duplicate-file prevention tests, and independent approval record.
+- If portfolio bootstrap automation is pursued separately: opt-in repository manifest, dry-run evidence, per-repository pull-request flow, correct user/organization discovery, paginated duplicate detection, explicit write-error propagation, disabled-feature handling, mutation throttling/retry/checkpointing, least-privilege token matrix, audit/revocation/rollback design, duplicate-file prevention tests, and independent approval record.
 
 ## Rollback Criteria
 
-Withdraw or roll back the runtime candidate if seeded runs diverge, ledger tampering is undetected, limits can be bypassed, timeout/interruption corrupts evidence, freeze hashes are unstable, untrusted input gains authority, upstream contracts drift, documented commands fail, severe security findings remain, or artifact hashes differ. Immediately disable and revoke any bootstrap automation if it performs an unapproved write, targets a non-opted-in repository, writes directly to a protected/default branch, creates a duplicate source of truth, loses audit evidence, or exceeds its declared token scope. Restore the prior verified state and preserve failed-candidate inputs, logs, reports, hashes, and affected-repository inventory.
+Withdraw or roll back the runtime candidate if seeded runs diverge, ledger tampering is undetected, limits can be bypassed, timeout/interruption corrupts evidence, freeze hashes are unstable, untrusted input gains authority, upstream contracts drift, documented commands fail, severe security findings remain, or artifact hashes differ. Immediately disable and revoke any bootstrap automation if it performs an unapproved write, targets a non-opted-in repository, writes directly to a protected/default branch, creates a duplicate source of truth, silently skips intended repositories, suppresses a write failure, loses audit evidence, leaves an untracked partial run, or exceeds its declared token scope. Restore the prior verified state and preserve failed-candidate inputs, logs, reports, hashes, and affected-repository inventory.
 
 ## Unresolved Blockers
 
@@ -83,13 +84,15 @@ Withdraw or roll back the runtime candidate if seeded runs diverge, ledger tampe
 - Adversarial, timeout, tamper, interruption, rollback, security, checksum, SBOM, and provenance evidence is absent.
 - Upstream compatibility is blocked by the incomplete QSO-GENOMES set and non-runnable QuantumStateObjects package.
 - Draft PR #1 conflicts with the approved product directive and currently presents broad-token, live-schedule, direct-write, duplicate-source, audit, and rollback risks.
+- Five unresolved PR #1 review findings additionally block organization discovery, paginated idempotency, truthful write results, disabled-Issues handling, and safe throttled/resumable mutation.
 
 ## Decisions Requiring Approval
 
 - Close or relocate draft PR #1 to a dedicated governance/control repository, or approve a redesigned independent control-plane product.
-- Any approved redesign must be opt-in per repository, dry-run by default, pull-request based, least-privilege, non-duplicative, auditable, reversible, and excluded from the QSO-FABRIC runtime release.
+- Any approved redesign must be opt-in per repository, dry-run by default, pull-request based, least-privilege, non-duplicative, auditable, reversible, correct for user and organization owners, and safe under pagination, disabled features, API errors, retries, and partial-run recovery.
 
 ## Release Log
 
 - 2026-07-16: Aligned the candidate with the bounded integration-harness directive; release remained blocked pending reproducible runtime and upstream-contract evidence.
 - 2026-07-16: Reviewed draft PR #1, excluded owner-wide bootstrap automation from the runtime scope, recorded its security blockers, and held the candidate `BLOCKED` pending redesign or relocation approval.
+- 2026-07-16: Added five unresolved reliability findings for organization discovery, issue pagination, write-error handling, disabled-Issues repositories, and mutating-request throttling/recovery; runtime priority remained unchanged.
