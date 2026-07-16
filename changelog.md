@@ -7,6 +7,7 @@
 - 2026-07-16 — Prioritized acceptance of the existing runtime, packaging, canonical output contracts, limit/tamper fixtures, and rollback evidence before new capabilities.
 - 2026-07-16 — Retained the runtime-verification priority after reviewing draft PR #1; owner-wide repository bootstrap and portfolio-governance automation are not part of the current MVP.
 - 2026-07-16 — Required any future repository bootstrap capability to be opt-in, dry-run by default, pull-request based, least-privilege, non-duplicative, and approved for a dedicated control-plane owner before activation.
+- 2026-07-16 — Preserved P0–P3 ordering after five additional PR #1 reliability findings; the findings strengthen the existing redesign/relocation decision rather than creating a new product priority.
 
 ### Architecture
 - Added a formal task chain that preserves QSO-GENOMES and QuantumStateObjects as schema/hash-validated dependencies without importing executable authority.
@@ -18,6 +19,7 @@
 
 ### Security
 - Draft PR #1 currently defaults scheduled execution to live writes, requests a token capable of writing contents and issues across owned repositories, writes directly to default branches, and can create duplicate planning files such as `TASK_CHAIN.md` beside `taskchain.md`; these are blocking review findings.
+- Five additional unresolved findings show that the proposal can silently miss organization-owned repositories, duplicate orientation issues after the first issue page, report failed writes as successful after swallowed `404` responses, repeatedly fail on repositories with Issues disabled, and leave partially mutated portfolios when unthrottled write bursts hit secondary limits.
 
 ### Release
 - The first runtime candidate remains blocked until the harness is reproducible, packaged, licensed, security-tested, checksummed, and tied to provenance.
