@@ -1,0 +1,21 @@
+{
+  "repository": "QSO-FABRIC",
+  "objective": "Consume immutable QSO-SEEKER evidence references from the Digital Consciousness Field and bind them to Experimenter outputs, citations, provenance, and review gates.",
+  "blockers_addressed": [4,8,9,10],
+  "groups": {
+    "qso_runtime/evidence": ["reference.py", "bundle.py", "resolver.py", "citation.py", "provenance.py", "comparison.py", "conflict.py", "quality.py"],
+    "qso_runtime/digitalis": ["client.py", "query.py", "subscription.py", "field_adapter.py", "acknowledgement.py"],
+    "qso_runtime/governance": ["evidence_access.py", "source_authority.py", "promotion_gate.py"],
+    "qso_runtime/reports": ["evidence_report.py", "citation_report.py", "provenance_report.py"],
+    "tests": ["test_evidence_bundle.py", "test_field_adapter.py", "test_source_comparison.py", "test_conflicting_evidence.py", "test_citation_resolution.py", "test_provenance_binding.py", "test_promotion_requires_review.py", "test_no_raw_payload.py"],
+    "docs": ["seeker-evidence-integration.md", "evidence-bundle-contract.md", "citation-and-provenance.md", "evidence-promotion-gates.md"]
+  },
+  "invariants": [
+    "Experimenters receive bounded evidence views, never raw network payloads.",
+    "Every inference identifies supporting and contradicting record hashes.",
+    "Source authority, retrieval time, transformations, sensitivity, and uncertainty remain visible.",
+    "Contradictory evidence is preserved rather than silently merged.",
+    "No evidence-derived proposal is promoted without explicit human review.",
+    "Exact-head CI must replay evidence-bundle construction deterministically."
+  ]
+}
