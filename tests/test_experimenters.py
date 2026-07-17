@@ -27,6 +27,19 @@ def test_every_role_is_bounded_and_frozen() -> None:
         assert len(result["messages_sent"]) <= 1
         assert len(result["messages_received"]) <= 1
         assert all(len(message["text"]) <= 120 for message in result["messages_sent"])
+        assert all(len(message["text"]) <= 120 for message in result["messages_received"])
+        assert all(len(contribution) <= 120 for contribution in result["contributions"])
+
+
+def test_message_limit_drops_are_audited() -> None:
+    report = run_collective(
+        "Run enough rounds to exceed the message quota",
+        CollectiveLimits(max_rounds=3, max_messages_per_role=1, max_message_chars=200),
+        roles=("futurist", "inventor"),
+    )
+    dropped = [event for event in report["events"] if event["kind"] == "message_dropped"]
+    assert dropped
+    assert all(event["payload"]["reason"] in {"sender_limit", "recipient_limit"} for event in dropped)
 
 
 def test_subset_workflow_is_supported() -> None:
@@ -36,3 +49,5 @@ def test_subset_workflow_is_supported() -> None:
         roles=("futurist", "inventor", "experimentalist", "skeptic", "archivist"),
     )
     assert report["workflow"] == ["futurist", "inventor", "experimentalist", "skeptic", "archivist"]
+    review_events = [event for event in report["events"] if event["kind"] == "human_review_required"]
+    assert review_events[0]["actor"] == "fabric"
