@@ -1,0 +1,33 @@
+{
+  "repository": "QSO-FABRIC",
+  "phase_order": ["foundation", "core-runtime", "assurance", "integration", "release"],
+  "groups": {
+    "": ["LICENSE", "pyproject.toml", "requirements.txt", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md"],
+    "qso_runtime/collective": ["__init__.py", "collective.py", "experimenter.py", "context.py", "contribution.py", "result.py", "session.py"],
+    "qso_runtime/roles": ["__init__.py", "registry.py", "loader.py", "validator.py", "prompts.py", "adapters.py"],
+    "qso_runtime/workflows": ["__init__.py", "workflow.py", "loader.py", "planner.py", "scheduler.py", "transition.py", "stopping_conditions.py"],
+    "qso_runtime/messaging": ["__init__.py", "message.py", "router.py", "mailbox.py", "limits.py", "filters.py", "protocol.py"],
+    "qso_runtime/ledger": ["__init__.py", "event.py", "append_only.py", "hashing.py", "verification.py", "export.py"],
+    "qso_runtime/freeze": ["__init__.py", "controller.py", "snapshot.py", "decision.py", "rollback.py"],
+    "qso_runtime/governance": ["__init__.py", "policy_engine.py", "capability_guard.py", "human_review.py", "ethics_gate.py", "authority.py", "audit.py"],
+    "qso_runtime/provenance": ["__init__.py", "artifact.py", "citation.py", "source_record.py", "decision_record.py", "manifest.py"],
+    "qso_runtime/synthesis": ["__init__.py", "agreements.py", "disagreements.py", "uncertainty.py", "evidence_matrix.py", "final_report.py"],
+    "qso_runtime/validation": ["__init__.py", "input_validator.py", "registry_validator.py", "workflow_validator.py", "output_validator.py", "invariant_validator.py"],
+    "qso_runtime/reports": ["__init__.py", "json_report.py", "markdown_report.py", "role_report.py", "experiment_report.py", "audit_report.py"],
+    "qso_runtime/configuration": ["__init__.py", "defaults.py", "limits.py", "settings.py", "environment.py"],
+    "qso_runtime/cli": ["__init__.py", "main.py", "run.py", "validate.py", "inspect.py", "replay.py", "verify.py"],
+    "configs": ["experimenters.default.json", "experimenters.strict.json", "invention-loop.json", "scientific-loop.json", "minimal-validation-loop.json"],
+    "examples": ["basic_collective.py", "custom_role_subset.py", "invention_experiment.py", "falsification_experiment.py", "future_scenarios.py", "replay_ledger.py", "verify_report.py"],
+    "prompts/shared": ["evidence_rules.md", "uncertainty_rules.md", "output_contract.md"],
+    "prompts/roles": ["futurist.md", "theorist.md", "inventor.md", "skeptic.md", "experimentalist.md", "observer.md", "synthesist.md", "engineer.md", "optimizer.md", "strategist.md", "ethicist-governor.md", "archivist.md"],
+    "tests": ["test_collective_determinism.py", "test_role_loading.py", "test_role_exact_set.py", "test_workflow_order.py", "test_custom_workflow.py", "test_message_bounds.py", "test_runtime_bounds.py", "test_freeze_points.py", "test_ledger_integrity.py", "test_ledger_tampering.py", "test_human_review_gate.py", "test_capability_denials.py", "test_provenance.py", "test_report_generation.py", "test_replay.py"],
+    "tests/fixtures/registries": [".gitkeep"],
+    "tests/fixtures/workflows": [".gitkeep"],
+    "tests/fixtures/ledgers": [".gitkeep"],
+    "tests/fixtures/reports": [".gitkeep"],
+    "artifacts": [".gitkeep"],
+    "docs": ["architecture.md", "execution-model.md", "collective-lifecycle.md", "workflow-engine.md", "messaging-protocol.md", "ledger-and-provenance.md", "freeze-and-rollback.md", "governance-model.md", "threat-model.md", "CLI.md", "examples.md"],
+    ".github/workflows": ["test.yml", "deterministic-replay.yml", "security.yml", "compatibility.yml"],
+    ".github": ["CODEOWNERS", "pull_request_template.md"]
+  }
+}
