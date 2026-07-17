@@ -1,0 +1,67 @@
+name: Gromerical Network Probe
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/gromerical_engine.py"
+      - "qso_runtime/gromerical_orchestrator.py"
+      - "scripts/run_gromerical_network_probe.py"
+      - ".github/workflows/gromerical-network-probe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compile bounded modules
+        run: python -m py_compile qso_runtime/gromerical_engine.py qso_runtime/gromerical_orchestrator.py scripts/run_gromerical_network_probe.py
+
+      - name: Run live seeker-mediated search probe
+        run: |
+          python scripts/run_gromerical_network_probe.py \
+            "Use embedded gromerical reasoning to improve QSO-SEEKER evidence retrieval and checkpoint orchestration" \
+            --steps 1 \
+            --output artifacts/gromerical-network-probe.json
+
+      - name: Verify network and authority boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/gromerical-network-probe.json").read_text())
+          assert report["status"] == "checkpoint-ready"
+          assert report["network_used"] is True
+          assert report["network_actor"] == "seeker-proxy"
+          assert report["qso_network_authority"] is False
+          assert report["automatic_release"] is False
+          assert report["human_review_required"] is True
+          assert set(report["results"]) == {"atlas", "nova", "orion", "lyra"}
+          for entries in report["results"].values():
+              assert len(entries) == 1
+              assert entries[0]["network_used"] is True
+              assert entries[0]["qso_network_authority"] is False
+              assert entries[0]["result_count"] <= 3
+          PY
+
+      - name: Upload probe evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gromerical-network-probe-${{ github.run_id }}
+          path: artifacts/gromerical-network-probe.json
+          if-no-files-found: error
+          retention-days: 14
