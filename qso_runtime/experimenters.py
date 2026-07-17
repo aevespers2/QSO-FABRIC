@@ -129,30 +129,44 @@ class Experimenter:
         self.result = RoleResult(role=role, purpose=ROLE_PURPOSES[role])
 
     def contribute(self, objective: str, round_number: int) -> str:
-        objective_excerpt = objective[: self.limits.max_message_chars]
-        contribution = f"Round {round_number}: {ROLE_PROMPTS[self.role]} Objective: {objective_excerpt}"
+        unbounded = f"Round {round_number}: {ROLE_PROMPTS[self.role]} Objective: {objective}"
+        contribution = unbounded[: self.limits.max_message_chars]
         self.result.contributions.append(contribution)
         self.ledger.append("contribution", self.role, {"round": round_number, "text": contribution})
         return contribution
 
-    def send(self, recipient: "Experimenter", text: str) -> None:
+    def send(self, recipient: "Experimenter", text: str) -> bool:
         if len(self.result.messages_sent) >= self.limits.max_messages_per_role:
-            return
+            self.ledger.append(
+                "message_dropped",
+                self.role,
+                {"to": recipient.role, "reason": "sender_limit", "limit": self.limits.max_messages_per_role},
+            )
+            return False
         bounded = text[: self.limits.max_message_chars]
+        if not recipient.receive(self.role, bounded):
+            self.ledger.append(
+                "message_dropped",
+                self.role,
+                {"to": recipient.role, "reason": "recipient_limit", "limit": self.limits.max_messages_per_role},
+            )
+            return False
         self.result.messages_sent.append({"to": recipient.role, "text": bounded})
         self.ledger.append("message_sent", self.role, {"to": recipient.role, "text": bounded})
-        recipient.receive(self.role, bounded)
+        return True
 
-    def receive(self, sender: str, text: str) -> None:
+    def receive(self, sender: str, text: str) -> bool:
         if len(self.result.messages_received) >= self.limits.max_messages_per_role:
-            return
+            return False
         bounded = text[: self.limits.max_message_chars]
         self.result.messages_received.append({"from": sender, "text": bounded})
         self.ledger.append("message_received", self.role, {"from": sender, "text": bounded})
+        return True
 
     def freeze(self, label: str) -> None:
+        state = asdict(self.result)
         digest = hashlib.sha256(
-            json.dumps(asdict(self.result), sort_keys=True, separators=(",", ":")).encode("utf-8")
+            json.dumps(state, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
         marker = f"{label}:{digest}"
         self.result.freeze_points.append(marker)
@@ -194,10 +208,11 @@ def run_collective(
         for experimenter in experimenters.values():
             experimenter.freeze(f"round-{round_number}")
 
-    ledger.append("human_review_required", "ethicist_governor", {"required": True})
+    review_actor = "ethicist_governor" if "ethicist_governor" in experimenters else "fabric"
+    ledger.append("human_review_required", review_actor, {"required": True})
     for experimenter in experimenters.values():
         experimenter.freeze("final")
-    ledger.append("collective_completed", "fabric", {"ledger_valid": ledger.verify()})
+    ledger.append("collective_completed", "fabric", {"ledger_valid_before_completion": ledger.verify()})
 
     return {
         "objective": objective,
