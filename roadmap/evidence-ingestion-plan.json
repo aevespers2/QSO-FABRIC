@@ -1,0 +1,21 @@
+{
+  "objective": "Allow QSO-FABRIC experiments to consume immutable, capability-scoped evidence bundles from the Digital Consciousness Field.",
+  "blockers_addressed": [4,6,8,9,10],
+  "groups": {
+    "qso_runtime/evidence": ["bundle.py", "record.py", "citation.py", "resolver.py", "deduplication.py", "versioning.py", "selection.py", "uncertainty.py"],
+    "qso_runtime/field": ["client.py", "query.py", "subscription.py", "acknowledgement.py", "access_log.py"],
+    "qso_runtime/evidence/validation": ["bundle_validator.py", "hash_validator.py", "provenance_validator.py", "scope_validator.py", "retention_validator.py"],
+    "qso_runtime/evidence/storage": ["content_store.py", "bundle_store.py", "index.py", "version_log.py", "retention.py"],
+    "tests": ["test_evidence_bundle.py", "test_evidence_hashes.py", "test_evidence_deduplication.py", "test_evidence_versioning.py", "test_evidence_scope.py", "test_evidence_retention.py", "test_evidence_citations.py", "test_evidence_to_conclusion_provenance.py", "test_evidence_replay.py"],
+    "docs": ["evidence-bundle-contract.md", "field-ingestion.md", "citation-and-provenance.md", "evidence-storage.md", "evidence-threat-model.md"]
+  },
+  "phases": [
+    "Define an immutable evidence bundle containing canonical records, field envelopes, citations, and provenance links.",
+    "Implement read-only field discovery and scoped retrieval.",
+    "Reject missing, mismatched, expired, revoked, or unauthorized evidence fail closed.",
+    "Store records and bundles by content hash with explicit version and duplicate relationships.",
+    "Expose evidence to Experimenters as observations with source references and uncertainty labels.",
+    "Link every inference and conclusion to the exact evidence bundle and experiment ledger events.",
+    "Require human review before promotion, release, or operational use."
+  ]
+}
