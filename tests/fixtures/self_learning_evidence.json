@@ -1,0 +1,26 @@
+[
+  {
+    "evidence_id": "active-1",
+    "source": "fixture://active/architecture",
+    "content": "The objective requires structural invariant evidence validation architecture integration and semantic distinction.",
+    "held_out": false
+  },
+  {
+    "evidence_id": "active-2",
+    "source": "fixture://active/provenance",
+    "content": "A deterministic learning system preserves evidence provenance checkpoints and bounded temporary memory.",
+    "held_out": false
+  },
+  {
+    "evidence_id": "held-out-1",
+    "source": "fixture://held-out/review",
+    "content": "Human review evaluates each structural invariant falsifiable risk integration dependency and semantic distinction.",
+    "held_out": true
+  },
+  {
+    "evidence_id": "held-out-2",
+    "source": "fixture://held-out/governance",
+    "content": "Promotion remains bounded by evidence validation architecture provenance and human review.",
+    "held_out": true
+  }
+]
