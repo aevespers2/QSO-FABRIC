@@ -1,0 +1,77 @@
+name: Self-Learning Milestone Two
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/learning_persistence.py"
+      - "scripts/run_learning_milestone_two.py"
+      - "tests/test_learning_persistence.py"
+      - "tests/fixtures/seeker_handoffs.json"
+      - ".github/workflows/self-learning-milestone-two.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  milestone-two:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile milestone
+        run: python -m py_compile qso_runtime/learning_persistence.py scripts/run_learning_milestone_two.py tests/test_learning_persistence.py
+
+      - name: Run milestone tests
+        run: pytest -q tests/test_learning_persistence.py tests/test_self_learning_cycle.py
+
+      - name: Run full reviewed lifecycle
+        run: |
+          rm -rf artifacts/self-learning-milestone-two
+          python scripts/run_learning_milestone_two.py \
+            --handoffs tests/fixtures/seeker_handoffs.json \
+            --store artifacts/self-learning-milestone-two/store \
+            --output artifacts/self-learning-milestone-two/report.json \
+            --reviewer ci-human-reviewer
+
+      - name: Verify lifecycle boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/self-learning-milestone-two/report.json").read_text())
+          assert report["episodes_identical"] is True
+          assert report["promotion"]["approved"] is True
+          assert report["promotion"]["promoted_count"] == 4
+          assert len(report["consolidation"]["concepts"]) == 4
+          assert report["consolidation"]["automatic_promotion"] is False
+          assert report["consolidation"]["human_review_required"] is True
+          assert report["final_durable_count"] == 0
+          assert all(e["retrieved_by"] == "seeker-proxy" for e in report["first_episode"]["evidence"])
+          assert all(e["qso_network_authority"] is False for e in report["first_episode"]["evidence"])
+          PY
+
+      - name: Upload milestone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-milestone-two-${{ github.run_id }}
+          path: artifacts/self-learning-milestone-two/
+          if-no-files-found: error
+          retention-days: 14
