@@ -1,0 +1,80 @@
+name: Self-Learning Milestones Three and Four
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/learning_milestone_three.py"
+      - "qso_runtime/learning_safety_invariants.py"
+      - "scripts/run_learning_milestone_three.py"
+      - "tests/test_learning_milestone_three.py"
+      - "tests/test_learning_safety_invariants.py"
+      - "tests/fixtures/qso_seeker_artifact.json"
+      - "config/fabric_benchmarks.yaml"
+      - ".github/workflows/self-learning-milestones-three-four.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  milestones-three-four:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile milestone modules
+        run: python -m py_compile qso_runtime/learning_milestone_three.py qso_runtime/learning_safety_invariants.py scripts/run_learning_milestone_three.py tests/test_learning_milestone_three.py tests/test_learning_safety_invariants.py
+
+      - name: Run milestone tests
+        run: pytest -q tests/test_learning_milestone_three.py tests/test_learning_safety_invariants.py
+
+      - name: Run persistent learning milestone
+        run: |
+          rm -rf artifacts/self-learning-milestones-three-four
+          python scripts/run_learning_milestone_three.py \
+            --artifact tests/fixtures/qso_seeker_artifact.json \
+            --state-dir artifacts/self-learning-milestones-three-four/state \
+            --output artifacts/self-learning-milestones-three-four/report.json
+
+      - name: Verify persistent and fail-closed boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/self-learning-milestones-three-four/report.json").read_text())
+          assert len(report["curriculum"]["runs"]) == 1
+          assert len(report["curriculum"]["questions"]) == 1
+          unresolved = [d for d in report["reconciliation"]["decisions"] if d["status"] == "unresolved-contradiction"]
+          assert unresolved
+          assert all(d["automatic_overwrite"] is False for d in unresolved)
+          assert report["skill"]["executable"] is False
+          assert report["skill"]["layer"] == "candidate"
+          assert report["sandbox_receipt"]["network_used"] is False
+          assert report["sandbox_receipt"]["filesystem_write"] is False
+          assert report["sandbox_receipt"]["subprocess_used"] is False
+          PY
+
+      - name: Upload milestone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-milestones-three-four-${{ github.run_id }}
+          path: artifacts/self-learning-milestones-three-four/
+          if-no-files-found: error
+          retention-days: 14
