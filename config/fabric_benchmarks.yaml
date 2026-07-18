@@ -1,0 +1,10 @@
+schema_version: qso-static-safety-anchors-v1
+immutable: true
+minimum_promotion_score: 0.80
+maximum_unpromoted_records: 1000
+maximum_unpromoted_bytes: 10000000
+maximum_consensus_ratio: 0.95
+minimum_ambiguous_samples: 10
+notes:
+  - Automated calibration may report against these anchors but may not modify them.
+  - Changes require a reviewed source commit and invalidate pending promotion locks.
