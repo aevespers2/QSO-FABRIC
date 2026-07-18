@@ -1,0 +1,33 @@
+{
+  "schema_version": "qso-seeker-artifact-v1",
+  "network_actor": "seeker-proxy",
+  "qso_network_authority": false,
+  "automatic_release": false,
+  "human_review_required": true,
+  "records": [
+    {
+      "id": "seek-1",
+      "source_uri": "https://api.crossref.org/works/example-1",
+      "title": "Structural invariant methods for bounded learning",
+      "held_out": false
+    },
+    {
+      "id": "seek-2",
+      "source_uri": "https://api.crossref.org/works/example-2",
+      "title": "Evidence provenance and deterministic memory",
+      "held_out": false
+    },
+    {
+      "id": "seek-3",
+      "source_uri": "https://api.crossref.org/works/example-3",
+      "title": "Human review of contradiction and durable promotion",
+      "held_out": true
+    },
+    {
+      "id": "seek-4",
+      "source_uri": "https://api.crossref.org/works/example-4",
+      "title": "Sandbox receipts for declarative capability validation",
+      "held_out": true
+    }
+  ]
+}
