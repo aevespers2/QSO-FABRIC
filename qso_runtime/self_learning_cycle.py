@@ -25,6 +25,8 @@ class EvidenceRecord:
     held_out: bool
     untrusted_text: bool = True
     executable: bool = False
+    retrieved_by: str = "fixture"
+    qso_network_authority: bool = False
 
 
 @dataclass(frozen=True)
@@ -151,12 +153,26 @@ class SelfLearningOrchestrator:
         evidence: list[EvidenceRecord] = []
         for index, item in enumerate(evidence_items):
             content = str(item["content"])
+            content_sha256 = sha256_text(content)
+            supplied_hash = str(item.get("content_sha256", content_sha256))
+            if supplied_hash != content_sha256:
+                raise ValueError("evidence content hash mismatch")
+            retrieved_by = str(item.get("retrieved_by", "fixture"))
+            qso_network_authority = bool(item.get("qso_network_authority", False))
+            executable = bool(item.get("executable", False))
+            if retrieved_by == "seeker-proxy" and qso_network_authority:
+                raise ValueError("Seeker evidence cannot grant QSO network authority")
+            if executable:
+                raise ValueError("learning evidence must remain non-executable")
             record = EvidenceRecord(
                 evidence_id=str(item.get("evidence_id", f"evidence-{index + 1}")),
                 source=str(item.get("source", "fixture")),
                 content=content,
-                content_sha256=sha256_text(content),
+                content_sha256=content_sha256,
                 held_out=bool(item.get("held_out", False)),
+                executable=executable,
+                retrieved_by=retrieved_by,
+                qso_network_authority=qso_network_authority,
             )
             evidence.append(record)
         active = [e for e in evidence if not e.held_out]
