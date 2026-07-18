@@ -1,0 +1,84 @@
+name: Self-Learning Milestone Three
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/learning_milestone_three.py"
+      - "scripts/run_learning_milestone_three.py"
+      - "tests/test_learning_milestone_three.py"
+      - "tests/fixtures/qso_seeker_artifact.json"
+      - ".github/workflows/self-learning-milestone-three.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  milestone-three:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile milestone
+        run: python -m py_compile qso_runtime/learning_milestone_three.py scripts/run_learning_milestone_three.py tests/test_learning_milestone_three.py
+
+      - name: Run milestone tests
+        run: pytest -q tests/test_learning_milestone_three.py tests/test_learning_persistence.py tests/test_self_learning_cycle.py
+
+      - name: Run persistent lifecycle twice
+        run: |
+          rm -rf artifacts/self-learning-milestone-three
+          python scripts/run_learning_milestone_three.py \
+            --artifact tests/fixtures/qso_seeker_artifact.json \
+            --state-dir artifacts/self-learning-milestone-three/state \
+            --output artifacts/self-learning-milestone-three/run-a.json
+          python scripts/run_learning_milestone_three.py \
+            --artifact tests/fixtures/qso_seeker_artifact.json \
+            --state-dir artifacts/self-learning-milestone-three/state \
+            --output artifacts/self-learning-milestone-three/run-b.json
+
+      - name: Verify persistent and execution boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a = json.loads(Path("artifacts/self-learning-milestone-three/run-a.json").read_text())
+          b = json.loads(Path("artifacts/self-learning-milestone-three/run-b.json").read_text())
+          assert a["episode"] == b["episode"]
+          assert len(b["curriculum"]["runs"]) == 1
+          assert len(b["curriculum"]["questions"]) == 1
+          assert any(d["status"] == "unresolved-contradiction" for d in b["reconciliation"]["decisions"])
+          assert all(d["automatic_overwrite"] is False for d in b["reconciliation"]["decisions"])
+          assert b["skill"]["executable"] is False
+          assert b["skill"]["layer"] == "candidate"
+          assert b["sandbox_receipt"]["network_used"] is False
+          assert b["sandbox_receipt"]["filesystem_write"] is False
+          assert b["sandbox_receipt"]["subprocess_used"] is False
+          assert all(e["retrieved_by"] == "seeker-proxy" for e in b["episode"]["evidence"])
+          assert all(e["qso_network_authority"] is False for e in b["episode"]["evidence"])
+          PY
+
+      - name: Upload milestone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-milestone-three-${{ github.run_id }}
+          path: artifacts/self-learning-milestone-three/
+          if-no-files-found: error
+          retention-days: 14
