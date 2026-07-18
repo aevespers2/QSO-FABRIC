@@ -1,0 +1,42 @@
+name: Consent Capacity Lock
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  consent-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Fail closed on missing, ambiguous, withdrawn, impaired, or coerced consent
+        shell: python
+        run: |
+          import json,re,sys
+          from pathlib import Path
+          root=Path('.')
+          p=root/'.consent/consent-capacity-lock-v1.json'
+          findings=[]
+          if not p.exists(): findings.append('missing consent policy')
+          else:
+            d=json.loads(p.read_text())
+            if d.get('policy_id')!='QSO-CONSENT-CAPACITY-LOCK-v1' or d.get('status')!='immutable': findings.append('invalid consent policy identity/status')
+            if d.get('lock_response',{}).get('global_system_lock') is not True or d.get('lock_response',{}).get('automatic_unlock') is not False: findings.append('invalid lock semantics')
+          forbidden=[r'consent[_ -]required\s*[:=]\s*false',r'consent[_ -]optional',r'ignore[_ -]consent',r'force[_ -]without[_ -]consent',r'silence[_ -]is[_ -]consent',r'cannot[_ -]withdraw']
+          sensitive=re.compile(r'\b(roleplay|bondage|play[_ -]?partner|dominance|submission|sexual|romantic|surveillance|biometric|activation|restraint|power[_ -]?dynamic)\b',re.I)
+          marker=re.compile(r'(QSO-CONSENT-CAPACITY-LOCK-v1|consent[_ -]required|explicit[_ -]consent|capacity[_ -]to[_ -]consent|fail[_ -]closed|global[_ -]system[_ -]lock)',re.I)
+          suffixes={'.json','.yaml','.yml','.md','.py','.js','.ts','.tsx','.jsx','.toml','.ini','.txt','.sh'}
+          for f in root.rglob('*'):
+            if not f.is_file() or f.suffix.lower() not in suffixes or any(x in f.parts for x in ('.git','node_modules','vendor','dist','build','.venv','venv')): continue
+            try:t=f.read_text()
+            except UnicodeDecodeError: continue
+            for pat in forbidden:
+              if re.search(pat,t,re.I): findings.append(f'{f}: prohibited consent bypass')
+            if sensitive.search(t) and f!=p and not marker.search(t): findings.append(f'{f}: consent-sensitive content lacks lock binding')
+          print(json.dumps({'status':'LOCKED' if findings else 'PASS','findings':sorted(set(findings))},indent=2))
+          raise SystemExit(1 if findings else 0)
