@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="QSO-FABRIC is a bounded deterministic four-QSO integration harness for Atlas, Nova, Orion, and Lyra.">
+  <title>QSO-FABRIC · Bounded Four-QSO Research Harness</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #07111f;
+      --surface: #0d1b2d;
+      --surface-strong: #13243a;
+      --line: #29415f;
+      --text: #eef6ff;
+      --muted: #adc0d6;
+      --accent: #75d6ff;
+      --accent-strong: #c5f1ff;
+      --warning: #ffd78a;
+      --max: 1160px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(59, 160, 210, .20), transparent 28rem),
+        linear-gradient(180deg, #06101d 0%, var(--background) 100%);
+    }
+
+    a { color: var(--accent); }
+    a:hover, a:focus-visible { color: var(--accent-strong); }
+    a:focus-visible { outline: 3px solid var(--warning); outline-offset: 4px; }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 1rem;
+      z-index: 100;
+      padding: .75rem 1rem;
+      background: white;
+      color: #111;
+      border-radius: .5rem;
+    }
+    .skip-link:focus { left: 1rem; }
+
+    header, main, footer { width: min(var(--max), calc(100% - 2rem)); margin-inline: auto; }
+
+    header {
+      padding: 1.25rem 0 4rem;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding: .75rem 0;
+    }
+
+    .brand {
+      color: var(--text);
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-decoration: none;
+    }
+
+    .nav-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-weight: 650; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(17rem, .8fr);
+      gap: 2rem;
+      align-items: center;
+      padding-top: 4rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 .75rem;
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-size: .82rem;
+    }
+
+    h1 {
+      max-width: 12ch;
+      margin: 0;
+      font-size: clamp(2.8rem, 8vw, 6.6rem);
+      line-height: .94;
+      letter-spacing: -.055em;
+    }
+
+    .lead {
+      max-width: 68ch;
+      margin: 1.5rem 0 0;
+      color: var(--muted);
+      font-size: clamp(1.08rem, 2vw, 1.35rem);
+    }
+
+    .status-card, .card, .diagram, pre {
+      border: 1px solid var(--line);
+      background: linear-gradient(145deg, rgba(19, 36, 58, .95), rgba(10, 25, 42, .96));
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
+      border-radius: 1rem;
+    }
+
+    .status-card { padding: 1.5rem; }
+    .status-card strong { color: var(--warning); }
+    .status-card p:last-child { margin-bottom: 0; }
+
+    .actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.75rem; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.8rem;
+      padding: .65rem 1rem;
+      border: 1px solid var(--accent);
+      border-radius: .65rem;
+      color: #03111b;
+      background: var(--accent);
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .button.secondary { color: var(--text); background: transparent; border-color: var(--line); }
+
+    section { padding: 4.5rem 0; }
+    h2 { margin: 0 0 1rem; font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -.035em; }
+    h3 { margin-top: 0; }
+    .section-intro { max-width: 72ch; color: var(--muted); font-size: 1.08rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 2rem; }
+    .card { padding: 1.35rem; }
+    .card p { color: var(--muted); }
+    .card p:last-child { margin-bottom: 0; }
+    .role { color: var(--accent); font-weight: 750; }
+
+    .diagram {
+      display: grid;
+      grid-template-columns: repeat(7, auto);
+      justify-content: center;
+      align-items: center;
+      gap: .7rem;
+      padding: 1.6rem;
+      margin-top: 2rem;
+      overflow-x: auto;
+    }
+
+    .node {
+      min-width: 8.2rem;
+      padding: .8rem;
+      border: 1px solid var(--line);
+      border-radius: .7rem;
+      background: #0a1728;
+      text-align: center;
+      font-weight: 750;
+    }
+    .arrow { color: var(--accent); font-size: 1.4rem; }
+
+    .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start; }
+    ul { padding-left: 1.25rem; }
+    li + li { margin-top: .5rem; }
+
+    pre {
+      padding: 1rem;
+      overflow-x: auto;
+      color: #d9f4ff;
+      font-size: .92rem;
+    }
+
+    .notice {
+      border-left: .3rem solid var(--warning);
+      padding: .9rem 1rem;
+      background: rgba(255, 215, 138, .08);
+      color: var(--muted);
+    }
+
+    footer {
+      padding: 3rem 0 4rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    @media (max-width: 820px) {
+      .hero, .two-column, .grid { grid-template-columns: 1fr; }
+      .hero { padding-top: 2.5rem; }
+      .diagram { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); justify-self: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header>
+    <nav aria-label="Primary navigation">
+      <a class="brand" href="#top">QSO-FABRIC</a>
+      <div class="nav-links">
+        <a href="#architecture">Architecture</a>
+        <a href="#safety">Safety</a>
+        <a href="#onboarding">Onboarding</a>
+        <a href="ARCHITECTURE.md">Full docs</a>
+      </div>
+    </nav>
+
+    <div class="hero" id="top">
+      <div>
+        <p class="eyebrow">Deterministic · bounded · reviewable</p>
+        <h1>Four perspectives. One verifiable run.</h1>
+        <p class="lead">QSO-FABRIC coordinates Atlas, Nova, Orion, and Lyra inside a finite research harness. It records ordered events, state freeze hashes, bounded messages, and final proposals without granting the objects shell, network, credential, wallet, or repository authority.</p>
+        <div class="actions">
+          <a class="button" href="#onboarding">Run the baseline</a>
+          <a class="button secondary" href="https://github.com/aevespers2/QSO-FABRIC">View repository</a>
+        </div>
+      </div>
+      <aside class="status-card" aria-label="Current project status">
+        <p class="eyebrow">Current status</p>
+        <p><strong>Blocked — unverified runtime and upstream contracts.</strong></p>
+        <p>The Python harness exists, but packaging, licensing, cross-environment replay, adversarial fixtures, rollback evidence, security review, provenance, and read-only upstream compatibility remain release gates.</p>
+      </aside>
+    </div>
+  </header>
+
+  <main id="main">
+    <section aria-labelledby="purpose-heading">
+      <p class="eyebrow">Product boundary</p>
+      <h2 id="purpose-heading">A research integration harness, not an autonomous control plane.</h2>
+      <p class="section-intro">The repository's active task chain prioritizes formal acceptance of the existing runtime. Open-ended learning, production orchestration, payment settlement, credentialed action, and owner-wide repository automation are explicitly outside the current MVP.</p>
+
+      <div class="grid">
+        <article class="card">
+          <h3>Atlas</h3>
+          <p class="role">Structure and algorithms</p>
+          <p>Frames objectives as constrained graphs, invariants, compression problems, and deterministic mappings.</p>
+        </article>
+        <article class="card">
+          <h3>Nova</h3>
+          <p class="role">Verification and contradiction</p>
+          <p>Emphasizes failure modes, boundary violations, evidence, tamper detection, and release discipline.</p>
+        </article>
+        <article class="card">
+          <h3>Orion</h3>
+          <p class="role">Architecture and interfaces</p>
+          <p>Separates lifecycle, messaging, policy, ledger, and future adapters behind explicit boundaries.</p>
+        </article>
+        <article class="card">
+          <h3>Lyra</h3>
+          <p class="role">Language and epistemology</p>
+          <p>Clarifies terminology, human intent, limitations, and the distinction between evidence and proposal.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="architecture" aria-labelledby="architecture-heading">
+      <p class="eyebrow">Architecture</p>
+      <h2 id="architecture-heading">Explicit inputs, bounded collaboration, inspectable evidence.</h2>
+      <p class="section-intro">A human supplies an objective, deterministic seed, and limits. The fixed four-object loop records every consequential step in a hash-chained ledger and emits one JSON artifact for independent review.</p>
+      <div class="diagram" role="img" aria-label="Researcher objective and limits flow through the bounded four-QSO runtime into a hash-chained ledger, JSON report, and human review">
+        <div class="node">Objective<br>seed · limits</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">Four-QSO<br>runtime</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">Hash-chained<br>ledger</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">JSON report<br>human review</div>
+      </div>
+    </section>
+
+    <section id="safety" aria-labelledby="safety-heading">
+      <div class="two-column">
+        <div>
+          <p class="eyebrow">Trust boundary</p>
+          <h2 id="safety-heading">Proposals remain proposals.</h2>
+          <p class="section-intro">The report records observations, deterministic inferences, messages, integrity metadata, and final proposals. It does not authorize execution or establish that a proposal is correct.</p>
+        </div>
+        <div class="card">
+          <h3>Current prohibited authority</h3>
+          <ul>
+            <li>Shell or arbitrary command execution</li>
+            <li>Unrestricted network access or external learning</li>
+            <li>Credentials, secrets, wallets, or payment settlement</li>
+            <li>Repository writes or cross-repository mutation</li>
+            <li>Self-modification or production orchestration</li>
+          </ul>
+        </div>
+      </div>
+      <p class="notice">The current ledger and freeze hashes are candidate integrity mechanisms. They require versioned contracts, adversarial fixtures, and reproducibility evidence before they should be treated as stable interchange formats.</p>
+    </section>
+
+    <section id="onboarding" aria-labelledby="onboarding-heading">
+      <p class="eyebrow">Developer onboarding</p>
+      <h2 id="onboarding-heading">Reproduce the existing baseline before extending it.</h2>
+      <p class="section-intro">Use an isolated Python environment, run the current tests, execute one seeded experiment, and retain the exact commit, interpreter, commands, results, and artifact hashes. These commands are baseline entry points, not evidence that the release gates have passed.</p>
+      <pre><code>python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip pytest
+python -m pytest -q
+python -m qso_runtime.four_qso_experiment \
+  "P0 reproducibility baseline" \
+  --seed 2987 \
+  --rounds 4 \
+  --output artifacts/p0-baseline.json
+python -m json.tool artifacts/p0-baseline.json &gt;/dev/null
+shasum -a 256 artifacts/p0-baseline.json</code></pre>
+      <div class="actions">
+        <a class="button" href="DEVELOPER_GUIDE.md">Developer guide</a>
+        <a class="button secondary" href="OUTPUT_CONTRACTS.md">Output contracts</a>
+        <a class="button secondary" href="../release.md">Release gates</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>QSO-FABRIC documentation describes the current candidate runtime and required verification boundaries. It does not claim sentience, physical quantum execution, production readiness, or accepted release status.</p>
+  </footer>
+</body>
+</html>
