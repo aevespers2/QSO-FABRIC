@@ -23,6 +23,11 @@
 - Five retained review findings show that the proposal could silently miss organization-owned repositories, duplicate orientation issues after the first issue page, report failed writes as successful after swallowed `404` responses, repeatedly fail on repositories with Issues disabled, and leave partially mutated portfolios when unthrottled write bursts hit secondary limits.
 - Closure prevents these findings from blocking the runtime release, but they remain mandatory requirements for any separately approved successor.
 
+### Documentation
+- 2026-07-19 — Added a GitHub Pages project overview, architecture and trust-boundary guide, developer onboarding workflow, and output-contract design notes for the bounded four-QSO runtime.
+- 2026-07-19 — Expanded the README with the product boundary, runtime flow, evidence limitations, safety rules, contribution discipline, and direct links to the active task chain and release gates.
+- 2026-07-19 — Documented current JSON, event-hash, freeze-point, determinism, compatibility, and migration behavior as unversioned candidate semantics; no stable contract or release readiness is claimed.
+
 ### Release
 - The first runtime candidate remains blocked until the harness is reproducible, packaged, licensed, security-tested, checksummed, and tied to provenance.
 - The former repository-bootstrap scope conflict is resolved by closure and exclusion, not by accepting the proposed capability.
