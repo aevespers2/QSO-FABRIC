@@ -1,0 +1,72 @@
+name: Self-Learning Milestone Seven
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/review_operations.py"
+      - "scripts/run_learning_milestone_seven.py"
+      - "tests/test_review_operations.py"
+      - ".github/workflows/self-learning-milestone-seven.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  milestone-seven:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile operational controls
+        run: python -m py_compile qso_runtime/review_operations.py scripts/run_learning_milestone_seven.py tests/test_review_operations.py
+
+      - name: Run operational control tests
+        run: pytest -q tests/test_review_operations.py
+
+      - name: Run signed review and containment qualification
+        run: |
+          rm -rf artifacts/self-learning-milestone-seven
+          python scripts/run_learning_milestone_seven.py \
+            --state-dir artifacts/self-learning-milestone-seven/state \
+            --output artifacts/self-learning-milestone-seven/report.json
+
+      - name: Verify reviewer and incident boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/self-learning-milestone-seven/report.json").read_text())
+          assert report["approved_state"]["promotions"]["candidate-1"]["status"] == "active"
+          assert report["revoked_state"]["promotions"]["candidate-1"]["status"] == "revoked"
+          assert report["incident_state"]["state"] == "containment"
+          assert report["metrics"]["review_count"] == 2
+          assert report["metrics"]["revoked_promotions"] == 1
+          assert report["approve"]["signature"]
+          assert report["revoke"]["signature"]
+          PY
+
+      - name: Upload milestone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-milestone-seven-${{ github.run_id }}
+          path: artifacts/self-learning-milestone-seven/
+          if-no-files-found: error
+          retention-days: 14

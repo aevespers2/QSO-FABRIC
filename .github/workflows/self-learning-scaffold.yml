@@ -1,0 +1,76 @@
+name: Self-Learning Scaffold
+
+on:
+  pull_request:
+    paths:
+      - "architecture/self_learning_scaffold.json"
+      - "scripts/materialize_self_learning_scaffold.py"
+      - "tests/test_self_learning_scaffold.py"
+      - ".github/workflows/self-learning-scaffold.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONHASHSEED: "0"
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile generator
+        run: python -m py_compile scripts/materialize_self_learning_scaffold.py tests/test_self_learning_scaffold.py
+
+      - name: Validate deterministic dry run
+        run: |
+          rm -rf artifacts/self-learning-scaffold
+          mkdir -p artifacts/self-learning-scaffold/a artifacts/self-learning-scaffold/b
+          python scripts/materialize_self_learning_scaffold.py \
+            --target artifacts/self-learning-scaffold/a \
+            --summary artifacts/self-learning-scaffold/dry-run-a.json
+          python scripts/materialize_self_learning_scaffold.py \
+            --target artifacts/self-learning-scaffold/b \
+            --summary artifacts/self-learning-scaffold/dry-run-b.json
+          diff -u artifacts/self-learning-scaffold/dry-run-a.json artifacts/self-learning-scaffold/dry-run-b.json
+
+      - name: Materialize complete scaffold
+        run: |
+          python scripts/materialize_self_learning_scaffold.py \
+            --target artifacts/self-learning-scaffold/materialized \
+            --write \
+            --summary artifacts/self-learning-scaffold/materialized-summary.json
+
+      - name: Run scaffold tests
+        run: pytest -q tests/test_self_learning_scaffold.py
+
+      - name: Verify critical boundaries exist
+        run: |
+          test -f artifacts/self-learning-scaffold/materialized/src/self_learning_orchestrator/seeker/proxy.py
+          test -f artifacts/self-learning-scaffold/materialized/src/self_learning_orchestrator/memory/hash_registry.py
+          test -f artifacts/self-learning-scaffold/materialized/src/self_learning_orchestrator/fabric/human_review_gate.py
+          test -f artifacts/self-learning-scaffold/materialized/src/self_learning_orchestrator/security/prompt_injection.py
+          test -f artifacts/self-learning-scaffold/materialized/contracts/release-manifest.schema.json
+
+      - name: Upload scaffold evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-scaffold-${{ github.run_id }}
+          path: artifacts/self-learning-scaffold/
+          if-no-files-found: error
+          retention-days: 14

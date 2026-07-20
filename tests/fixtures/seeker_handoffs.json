@@ -1,0 +1,34 @@
+[
+  {
+    "query_id": "seeker-active-1",
+    "source_uri": "fixture://seeker/active/1",
+    "content": "Reviewed durable QSO learning requires evidence provenance and bounded temporary memory.",
+    "retrieved_by": "seeker-proxy",
+    "qso_network_authority": false,
+    "executable": false
+  },
+  {
+    "query_id": "seeker-active-2",
+    "source_uri": "fixture://seeker/active/2",
+    "content": "Atlas Nova Orion and Lyra produce hypotheses under deterministic episode boundaries.",
+    "retrieved_by": "seeker-proxy",
+    "qso_network_authority": false,
+    "executable": false
+  },
+  {
+    "query_id": "seeker-held-1",
+    "source_uri": "fixture://seeker/held/1",
+    "content": "Human review checks evidence provenance bounded learning hypotheses and durable promotion.",
+    "retrieved_by": "seeker-proxy",
+    "qso_network_authority": false,
+    "executable": false
+  },
+  {
+    "query_id": "seeker-held-2",
+    "source_uri": "fixture://seeker/held/2",
+    "content": "Deterministic rollback restores the prior durable memory state after reviewed promotion.",
+    "retrieved_by": "seeker-proxy",
+    "qso_network_authority": false,
+    "executable": false
+  }
+]

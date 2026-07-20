@@ -1,0 +1,74 @@
+name: Self-Learning Milestone Five
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/model_audit_envelope.py"
+      - "scripts/run_learning_milestone_five.py"
+      - "tests/test_model_audit_envelope.py"
+      - ".github/workflows/self-learning-milestone-five.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  milestone-five:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile deterministic audit modules
+        run: python -m py_compile qso_runtime/model_audit_envelope.py scripts/run_learning_milestone_five.py tests/test_model_audit_envelope.py
+
+      - name: Run audit envelope tests
+        run: pytest -q tests/test_model_audit_envelope.py
+
+      - name: Run deterministic multi-auditor qualification
+        run: |
+          rm -rf artifacts/self-learning-milestone-five
+          python scripts/run_learning_milestone_five.py \
+            --capture-dir artifacts/self-learning-milestone-five/transcripts \
+            --output artifacts/self-learning-milestone-five/report.json
+
+      - name: Verify replay and diversity boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/self-learning-milestone-five/report.json").read_text())
+          assert report["all_replays_valid"] is True
+          assert len(report["transcripts"]) == 5
+          assert all(t["request"]["temperature"] == 0 for t in report["transcripts"])
+          assert all(t["request"]["seed"] == 0 for t in report["transcripts"])
+          assert all(t["response"]["raw_token_log"] for t in report["transcripts"])
+          assert report["diversity"]["model_revision_count"] == 1
+          assert report["diversity"]["low_model_diversity"] is True
+          assert report["diversity"]["promotion_blocked"] is True
+          assert report["promotion_allowed"] is False
+          PY
+
+      - name: Upload milestone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-milestone-five-${{ github.run_id }}
+          path: artifacts/self-learning-milestone-five/
+          if-no-files-found: error
+          retention-days: 14

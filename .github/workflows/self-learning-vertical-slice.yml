@@ -1,0 +1,80 @@
+name: Self-Learning Vertical Slice
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/self_learning_cycle.py"
+      - "scripts/run_self_learning_cycle.py"
+      - "tests/test_self_learning_cycle.py"
+      - "tests/fixtures/self_learning_evidence.json"
+      - ".github/workflows/self-learning-vertical-slice.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  learning-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile implementation
+        run: python -m py_compile qso_runtime/self_learning_cycle.py scripts/run_self_learning_cycle.py tests/test_self_learning_cycle.py
+
+      - name: Run unit tests
+        run: pytest -q tests/test_self_learning_cycle.py
+
+      - name: Run deterministic episode twice
+        run: |
+          rm -rf artifacts/self-learning
+          python scripts/run_self_learning_cycle.py \
+            "Build a bounded self-learning QSO system" \
+            --evidence tests/fixtures/self_learning_evidence.json \
+            --promotion-threshold 0.6 \
+            --output artifacts/self-learning/run-a.json
+          python scripts/run_self_learning_cycle.py \
+            "Build a bounded self-learning QSO system" \
+            --evidence tests/fixtures/self_learning_evidence.json \
+            --promotion-threshold 0.6 \
+            --output artifacts/self-learning/run-b.json
+          diff -u artifacts/self-learning/run-a.json artifacts/self-learning/run-b.json
+
+      - name: Verify promotion and memory boundaries
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/self-learning/run-a.json").read_text())
+          assert report["memory_chain_valid"] is True
+          assert len(report["memories"]) == 4
+          assert report["automatic_promotion"] is False
+          assert report["durable_write_performed"] is False
+          assert report["human_review_required"] is True
+          assert all(record["layer"] == "temporary" for record in report["memories"])
+          PY
+
+      - name: Upload episode evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-vertical-slice-${{ github.run_id }}
+          path: artifacts/self-learning/
+          if-no-files-found: error
+          retention-days: 14

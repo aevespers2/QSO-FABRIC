@@ -1,0 +1,72 @@
+name: Self-Learning Milestone Six
+
+on:
+  pull_request:
+    paths:
+      - "qso_runtime/graph_persistence.py"
+      - "scripts/run_learning_milestone_six.py"
+      - "tests/test_graph_persistence.py"
+      - ".github/workflows/self-learning-milestone-six.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONPATH: .
+  PYTHONHASHSEED: "0"
+
+jobs:
+  milestone-six:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test runner
+        run: python -m pip install pytest
+
+      - name: Compile graph persistence modules
+        run: python -m py_compile qso_runtime/graph_persistence.py scripts/run_learning_milestone_six.py tests/test_graph_persistence.py
+
+      - name: Run graph persistence tests
+        run: pytest -q tests/test_graph_persistence.py
+
+      - name: Run transactional graph qualification
+        run: |
+          rm -rf artifacts/self-learning-milestone-six
+          python scripts/run_learning_milestone_six.py \
+            --state-dir artifacts/self-learning-milestone-six/state \
+            --output artifacts/self-learning-milestone-six/report.json
+
+      - name: Verify atomicity migrations and graph integrity
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/self-learning-milestone-six/report.json").read_text())
+          assert report["restored_transaction"] == report["first_transaction"]
+          assert report["active_belief_state"]["nodes"][0]["node_id"].startswith("belief-a")
+          assert report["active_knowledge_state"]["nodes"][0]["node_id"].startswith("knowledge-a")
+          assert report["migrated_belief_state"]["schema_version"] == 2
+          assert report["consolidation"]["orphan_edge_ids"] == []
+          assert report["consolidation"]["automatic_promotion"] is False
+          assert report["consolidation"]["human_review_required"] is True
+          PY
+
+      - name: Upload milestone evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-learning-milestone-six-${{ github.run_id }}
+          path: artifacts/self-learning-milestone-six/
+          if-no-files-found: error
+          retention-days: 14
