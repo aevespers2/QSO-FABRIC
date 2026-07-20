@@ -5,12 +5,20 @@ States: `PROPOSED` · `READY` · `IN PROGRESS` · `BLOCKED` · `REVIEW` · `DONE
 ## Product directive
 
 - **Next objective:** Stabilize the implemented bounded four-QSO experiment as a reproducible integration harness.
-- **User outcome:** A researcher can run Atlas, Nova, Orion, and Lyra with a deterministic seed and explicit limits, then verify the event ledger, freeze-point hashes, messages, and final report without granting network, credential, or repository authority.
+- **User outcome:** A researcher can run Atlas, Nova, Orion, and Lyra with a deterministic seed and explicit limits, then verify the event ledger, freeze-point hashes, messages, and final report without granting network, credential, deployment, or repository authority.
 - **MVP scope:** existing Python runtime and runner; package/environment definition; license; versioned event/ledger/freeze/report contracts; deterministic, boundary, timeout, tamper, and rollback fixtures; retained CI/test evidence; read-only compatibility with published QSO-GENOMES and QuantumStateObjects contracts.
 - **Priority:** Formal acceptance and verification of the existing runtime comes before additional learning, data acquisition, visualization, economic behavior, or portfolio administration.
-- **Success criteria:** clean install and smoke command pass; repeated seeded runs produce identical canonical hashes; tampering is detected; runtime/message limits fail closed; interruption and rollback preserve evidence; no unapproved network, command, credential, repository-write, or cross-repository mutation path exists.
+- **Success criteria:** clean install and smoke command pass; repeated seeded runs produce identical canonical hashes; tampering is detected; runtime/message limits fail closed; interruption and rollback preserve evidence; no unapproved network, command, credential, repository-write, deployment, or cross-repository mutation path exists.
 - **Non-goals:** autonomous internet learning, self-modification, production orchestration, credentialed agents, payment settlement, claims of sentience/physical quantum execution, or acting as the control plane for all owned repositories.
 - **Release rationale:** QSO-FABRIC is the first executable portfolio integration artifact. A narrowly verified harness will expose contract defects safely before broader runtime, UI, or governance automation depends on it.
+
+## A.L.I.S.T.A.I.R.E. alignment
+
+A.L.I.S.T.A.I.R.E. is the canonical system. QSO-FABRIC is its bounded collaboration, experiment, and evidence subsystem. The long-term mission of increasingly autonomous development does not change the current P0–P3 order and does not implicitly grant this repository portfolio-control authority.
+
+QSO-FABRIC may contribute deterministic hypotheses, contradiction analysis, integrity-marked reports, and contract-validation evidence. Repository discovery, portfolio planning, branch and pull-request operations, merge/deployment authority, credentials, audit, incident response, and cross-repository rollback require a separately chartered development control plane with explicit contracts.
+
+The unresolved portfolio-level architecture decision is to identify that control-plane owner. Until it is recorded, QSO-FABRIC outputs remain reviewable evidence and proposals rather than autonomous repository actions.
 
 ## Active chain
 
@@ -20,6 +28,21 @@ States: `PROPOSED` · `READY` · `IN PROGRESS` · `BLOCKED` · `REVIEW` · `DONE
 | P1 | Add package, license, and versioned output contracts | QSOBuilder | P0 | PROPOSED | Clean installation works; supported Python versions are declared; event, ledger, freeze-point, and report formats have explicit versions and canonicalization rules. |
 | P2 | Publish deterministic security and failure fixtures | QSOBuilder | P1 | PROPOSED | Positive, negative, boundary, timeout, tamper, interruption, and rollback fixtures pass with retained hashes and reports. |
 | P3 | Validate upstream compatibility without importing authority | Builder | QSO-GENOMES accepted manifest and QuantumStateObjects runnable baseline | BLOCKED | Genome/runtime manifests are checked by schema version and hash; missing or incompatible artifacts fail closed; external code is not imported or executed. |
+
+## Concurrent candidate rule
+
+Open pull requests that explore expanded collectives, evidence acquisition, self-learning scaffolds, sprite policy, safety repair, or QSIO integration are candidates only. They must not be treated as cumulative accepted architecture.
+
+A candidate may enter the active chain only after it:
+
+- fits the current directive or receives a recorded scope decision;
+- declares changed contracts, permissions, dependencies, and authority;
+- rebases and reconciles shared invariants;
+- produces exact-head deterministic, security, failure, provenance, and rollback evidence;
+- updates `taskchain.md`, `release.md`, `changelog.md`, and public documentation;
+- receives explicit acceptance.
+
+See `docs/CANDIDATE_GOVERNANCE.md` for the admission and conflict model.
 
 ## Closed scope conflict: repository bootstrap automation
 
@@ -43,12 +66,14 @@ The five unresolved review findings for organization discovery, issue pagination
 
 ## Builder rules
 
-Execute only the highest-priority unblocked task. Preserve the existing bounded runtime while adding evidence; do not widen scope to networking, external learning, payments, UI, or cross-repository governance automation without a recorded approval and revised product directive.
+Execute only the highest-priority unblocked task. Preserve the existing bounded runtime while adding evidence; do not widen scope to networking, external learning, payments, UI, cross-repository governance automation, merge/deployment authority, or autonomous policy changes without a recorded approval and revised product directive.
 
 ## Builder log
 
 Record commits, Python/tool versions, commands/results, workflow URLs, seeds, fixture and artifact hashes, failures, limits, rollback evidence, and follow-ups.
 
+- 2026-07-19 — Documented QSO-FABRIC as the bounded collaboration and evidence subsystem within A.L.I.S.T.A.I.R.E.; retained P0–P3 ordering and separated autonomous-development control-plane authority from the runtime.
+- 2026-07-19 — Added candidate-governance rules for concurrent architecture pull requests; no candidate was accepted or reprioritized.
 - 2026-07-16 — Product review retained the runtime-verification priority and classified PR #1 as an out-of-scope portfolio-governance proposal requiring redesign or relocation before approval.
 - 2026-07-16 — Recorded five PR #1 reliability findings covering organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling/recovery; no portfolio reprioritization was made.
 - 2026-07-16 — Recorded closure of PR #1. The current scope conflict is resolved by exclusion; no bootstrap capability was accepted, and QSO-FABRIC remains focused on the bounded runtime baseline.
