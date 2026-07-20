@@ -10,7 +10,7 @@ The current report contains:
 
 | Field | Current type | Meaning |
 |---|---|---|
-| `objective` | string | Research objective supplied to all four QSOs |
+| `objective` | string | Full research objective supplied to all four QSOs |
 | `base_seed` | integer | Seed from which per-QSO seeds are derived |
 | `limits` | object | Serialized `ExperimentLimits` |
 | `ledger_valid` | boolean | Result of verifying the in-memory event chain |
@@ -18,6 +18,8 @@ The current report contains:
 | `final_event_hash` | string | Hash of the final event |
 | `qsos` | object | Map of QSO name to serialized QSO result |
 | `events` | array | Ordered serialized event ledger |
+
+The full objective is retained in the top-level report and the `experiment_started` event. Only observation and message text are truncated by `max_message_chars`; the current implementation therefore does not provide a complete report-size or memory bound.
 
 The report currently has no `schema_version`, `canonicalization_version`, producer version, source commit, generation time, environment, or artifact checksum field. These omissions are release blockers, not permission for consumers to infer defaults.
 
@@ -34,7 +36,7 @@ Current fields:
 }
 ```
 
-The runtime rejects non-positive round, message, or runtime values. It currently does not apply a separate validation rule to `max_message_chars`; the release contract should state the accepted range and behavior for zero, negative, extremely large, non-integer, NaN, and infinite values where applicable.
+The runtime rejects non-positive round, message-count, or runtime values. It currently does not apply a separate validation rule to `max_message_chars`; the release contract must define accepted types, ranges, and behavior for zero, negative, extremely large, non-integer, NaN, and infinite values where applicable.
 
 ## QSO result
 
@@ -45,7 +47,7 @@ Each entry in `qsos` currently contains:
 | `name` | string | Stable QSO identifier |
 | `role` | string | Human-readable role description |
 | `seed` | integer | Per-QSO deterministic seed |
-| `observations` | array of strings | Objective intake observations |
+| `observations` | array of strings | Objective intake observations, truncated by `max_message_chars` |
 | `inferences` | array of strings | Deterministically selected round statements |
 | `contradictions` | array of strings | Reserved contradiction records; currently empty in the baseline path |
 | `messages_sent` | array of objects | `{to, text}` records |
@@ -57,14 +59,23 @@ The four current identifiers are `atlas`, `nova`, `orion`, and `lyra`. Their ins
 
 ## Event record
 
-Each event currently contains:
+The first event currently has the following shape:
 
 ```json
 {
   "seq": 0,
   "kind": "experiment_started",
   "actor": "fabric",
-  "payload": {},
+  "payload": {
+    "objective": "<full objective>",
+    "base_seed": 2987,
+    "limits": {
+      "max_rounds": 4,
+      "max_messages_per_qso": 8,
+      "max_message_chars": 600,
+      "max_runtime_seconds": 10.0
+    }
+  },
   "previous_hash": "GENESIS",
   "event_hash": "<sha256>"
 }
@@ -98,48 +109,19 @@ The current event digest is SHA-256 over UTF-8 encoded JSON for:
 }
 ```
 
-Serialization currently uses Python `json.dumps` with:
+Serialization uses Python `json.dumps` with `sort_keys=True` and `separators=(",", ":")`. The first event uses `GENESIS` as `previous_hash`; every later event uses the immediately preceding `event_hash`.
 
-```python
-sort_keys=True
-separators=(",", ":")
-```
-
-The first event uses `GENESIS` as `previous_hash`; every later event uses the immediately preceding `event_hash`.
-
-### Unspecified details that must be resolved
-
-Before release, the contract must define:
-
-- schema and canonicalization version identifiers;
-- Unicode normalization and escaping;
-- number representation, including floats and prohibited non-finite values;
-- object-key and array ordering;
-- duplicate-key handling on parse;
-- allowed payload value types and nesting limits;
-- digest algorithm identifiers and encoding;
-- case and length requirements for hexadecimal hashes;
-- behavior for unknown fields and versions;
-- maximum event, payload, report, and ledger sizes;
-- whether the final artifact itself is checksummed separately.
+Before release, the contract must define schema and canonicalization versions, Unicode normalization and escaping, number representation, duplicate-key handling, ordering, nesting and size limits, digest identifiers, hexadecimal requirements, unknown-field/version behavior, and a checksum for the complete artifact.
 
 ## Freeze-point hashing
 
-A freeze digest is currently SHA-256 over the canonical JSON serialization of the QSO result using the same sorted-key and compact-separator settings.
+A freeze digest is SHA-256 over compact, sorted-key JSON for the current serialized QSO result. The digest is calculated before the new freeze marker is appended; the marker `label:digest` is then appended and a `freeze` event records `{label, state_hash}`.
 
-Important current semantic:
+Recomputing a freeze digest from the final result without reconstructing the state at that point will not necessarily yield the stored digest. A stable contract must either retain this incremental commitment model, define immutable snapshot objects, or declare a field-exclusion rule.
 
-1. the digest is calculated from the QSO result as it exists before the new freeze marker is appended;
-2. the marker `label:digest` is appended to `freeze_points`;
-3. a `freeze` event records `{label, state_hash}`.
+## Determinism boundary
 
-This order is significant. Recomputing a freeze digest from the final result without reconstructing the state at that point will not necessarily yield the stored digest.
-
-A stable contract should decide whether freeze points remain incremental state commitments, become explicit immutable snapshot objects, or include a declared field-exclusion rule. Any change requires a versioned migration rather than silent reinterpretation.
-
-## Determinism contract
-
-Current deterministic behavior depends on:
+Away from the wall-clock timeout boundary, current deterministic behavior depends on:
 
 - one base seed;
 - per-QSO seeds assigned by stable QSO insertion order;
@@ -147,91 +129,47 @@ Current deterministic behavior depends on:
 - fixed role template arrays;
 - fixed directed-ring message order;
 - fixed round order;
-- canonical JSON settings;
-- absence of timestamps or external data in report state.
+- compact sorted-key JSON serialization;
+- no timestamps or external data in report state.
 
-Exact cross-version reproducibility of Python pseudorandom behavior and serialization must be demonstrated for the supported environment matrix. If exact byte-identical replay cannot be guaranteed across all supported versions, the release must narrow the supported matrix or define a versioned deterministic algorithm independent of runtime implementation details.
+The timeout path is different. Before each round, the runtime compares `time.monotonic()` with `max_runtime_seconds`; host scheduling and execution speed determine which round, if any, receives a `runtime_limit` event. Identical seed, objective, and limits therefore do **not** guarantee identical event counts or hashes near the timeout threshold. Timeout-path artifacts must be treated as nondeterministic until the contract replaces wall-clock placement with deterministic budgeting or explicitly excludes timeout hashes from replay guarantees.
 
-## Candidate schema direction
-
-A future versioned report could include a top-level envelope such as:
-
-```json
-{
-  "contract": {
-    "name": "qso-fabric-report",
-    "schema_version": "1.0.0",
-    "canonicalization_version": "qso-json-c14n-1",
-    "hash_algorithm": "sha256"
-  },
-  "producer": {
-    "package_version": "0.1.0-alpha.1",
-    "source_commit": "<immutable commit>",
-    "python_version": "<version>"
-  },
-  "experiment": {},
-  "qsos": {},
-  "events": [],
-  "integrity": {
-    "ledger_valid": true,
-    "final_event_hash": "<sha256>",
-    "artifact_hash": "<sha256>"
-  }
-}
-```
-
-This example is not approved implementation scope. It illustrates the metadata categories required for reliable interchange and provenance; P1 should select the smallest contract that satisfies the release gates.
+Exact cross-version reproducibility of pseudorandom behavior and serialization must also be demonstrated for the supported environment matrix. Otherwise the release must narrow the supported matrix or define versioned algorithms independent of implementation details.
 
 ## Validation order
 
-A future consumer should validate in this order:
+A future consumer should:
 
-```mermaid
-flowchart TD
-    A[Read bytes with size limit] --> B[Parse JSON with duplicate-key protection]
-    B --> C[Validate envelope and supported schema version]
-    C --> D[Validate canonicalization and hash algorithm identifiers]
-    D --> E[Validate field types, bounds, names, and event ordering]
-    E --> F[Verify ledger links and event hashes]
-    F --> G[Verify freeze commitments using declared semantics]
-    G --> H[Verify artifact checksum and provenance]
-    H --> I[Accept as structurally valid evidence]
-```
+1. read bytes under a declared size limit;
+2. parse JSON with duplicate-key and non-finite-number rejection;
+3. validate the supported schema and canonicalization versions;
+4. validate field types, bounds, identities, and ordering;
+5. verify ledger links and event hashes;
+6. verify freeze commitments using declared semantics;
+7. verify artifact checksum and provenance;
+8. accept the artifact only as structurally valid evidence.
 
-Structural validity does not establish the truth or quality of a final proposal. It establishes only that an artifact satisfies a declared format and integrity procedure.
+Structural validity does not establish the truth or quality of a final proposal.
 
 ## Required fixtures
 
-At minimum, the versioned contract suite should include:
+The versioned contract suite should include canonical positive reports; repeated same-seed outputs; different-seed outputs; malformed JSON and duplicate keys; unsupported versions; modified, deleted, inserted, duplicated, and reordered events; broken links and hashes; changed freeze semantics; Unicode, numeric, and boundary-size cases; deterministic-budget and wall-clock-timeout cases; interruption and partial-write artifacts; unknown identifiers; and upstream manifest hash/version mismatches.
 
-- one canonical positive report;
-- repeated same-seed outputs with identical expected hashes;
-- different-seed outputs with intentionally different hashes;
-- malformed JSON and duplicate keys;
-- missing, unknown, and incompatible versions;
-- changed, deleted, inserted, duplicated, and reordered events;
-- broken previous-hash links and event hashes;
-- changed freeze labels, state hashes, and snapshot semantics;
-- Unicode, escaping, numeric, and boundary-size cases;
-- timeout, interruption, truncation, and partial-write artifacts;
-- unknown QSO and event identifiers;
-- upstream manifest hash/version mismatch cases.
-
-Every fixture should identify the expected result and reason: `PASS`, `FAIL`, or `UNKNOWN` where the evidence genuinely cannot resolve acceptance.
+Every fixture must identify an expected `PASS`, `FAIL`, or `UNKNOWN` result and a stable reason code.
 
 ## Compatibility policy
 
 Until a versioned policy is adopted:
 
-- producer changes to report fields, event kinds, hashing, ordering, seeds, templates, or freeze behavior should be treated as breaking;
+- changes to report fields, event kinds, hashing, ordering, seeds, templates, timeout behavior, or freeze behavior are breaking;
 - consumers should pin the source commit and expected hashes;
 - unknown fields or versions should fail closed;
 - upstream compatibility should remain read-only and hash/version checked;
-- no report should authorize code execution, payments, credential use, network access, or repository mutation.
+- no report may authorize code execution, payments, credential use, network access, or repository mutation.
 
 ## Related documentation
 
 - [Architecture](ARCHITECTURE.md)
 - [Developer guide](DEVELOPER_GUIDE.md)
-- [Release plan](../release.md)
-- [Task chain](../taskchain.md)
+- [Release plan](https://github.com/aevespers2/QSO-FABRIC/blob/main/release.md)
+- [Task chain](https://github.com/aevespers2/QSO-FABRIC/blob/main/taskchain.md)
