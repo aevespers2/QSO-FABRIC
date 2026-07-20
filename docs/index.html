@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="QSO-FABRIC is a bounded deterministic four-QSO integration harness for Atlas, Nova, Orion, and Lyra.">
+  <meta name="description" content="QSO-FABRIC is the bounded deterministic collaboration and evidence subsystem for A.L.I.S.T.A.I.R.E., coordinating Atlas, Nova, Orion, and Lyra.">
   <title>QSO-FABRIC · Bounded Four-QSO Research Harness</title>
   <style>
     :root {
@@ -49,10 +49,7 @@
     .skip-link:focus { left: 1rem; }
 
     header, main, footer { width: min(var(--max), calc(100% - 2rem)); margin-inline: auto; }
-
-    header {
-      padding: 1.25rem 0 4rem;
-    }
+    header { padding: 1.25rem 0 4rem; }
 
     nav {
       display: flex;
@@ -206,6 +203,7 @@
     <nav aria-label="Primary navigation">
       <a class="brand" href="#top">QSO-FABRIC</a>
       <div class="nav-links">
+        <a href="#alistaire">A.L.I.S.T.A.I.R.E.</a>
         <a href="#architecture">Architecture</a>
         <a href="#safety">Safety</a>
         <a href="#onboarding">Onboarding</a>
@@ -217,7 +215,7 @@
       <div>
         <p class="eyebrow">Deterministic · bounded · reviewable</p>
         <h1>Four perspectives. One verifiable run.</h1>
-        <p class="lead">QSO-FABRIC coordinates Atlas, Nova, Orion, and Lyra inside a finite research harness. It records ordered events, state freeze hashes, bounded messages, and final proposals without granting the objects shell, network, credential, wallet, or repository authority.</p>
+        <p class="lead">QSO-FABRIC coordinates Atlas, Nova, Orion, and Lyra inside a finite research harness. It records ordered events, state freeze hashes, bounded messages, and final proposals without granting the objects shell, network, credential, wallet, deployment, or repository authority.</p>
         <div class="actions">
           <a class="button" href="#onboarding">Run the baseline</a>
           <a class="button secondary" href="https://github.com/aevespers2/QSO-FABRIC">View repository</a>
@@ -261,6 +259,25 @@
       </div>
     </section>
 
+    <section id="alistaire" aria-labelledby="alistaire-heading">
+      <p class="eyebrow">Canonical system</p>
+      <h2 id="alistaire-heading">One subsystem in A.L.I.S.T.A.I.R.E.'s continuous-development architecture.</h2>
+      <p class="section-intro">A.L.I.S.T.A.I.R.E. is the canonical system. QSO-FABRIC supplies bounded collaboration, deterministic experiments, contradiction analysis, and integrity-marked evidence. A separately chartered control plane must own portfolio planning, repository operations, credentials, merge and deployment policy, audit, and cross-repository rollback.</p>
+      <div class="diagram" role="img" aria-label="A.L.I.S.T.A.I.R.E. supplies approved objectives to QSO-FABRIC, which produces evidence for review and a separate development control plane">
+        <div class="node">A.L.I.S.T.A.I.R.E.<br>mission · governance</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">QSO-FABRIC<br>bounded experiment</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">Ledger · hashes<br>contradictions · report</div>
+        <div class="arrow" aria-hidden="true">→</div>
+        <div class="node">Review / dedicated<br>control plane</div>
+      </div>
+      <div class="actions">
+        <a class="button" href="ALISTAIRE_ROLE.md">System role</a>
+        <a class="button secondary" href="CANDIDATE_GOVERNANCE.md">Candidate governance</a>
+      </div>
+    </section>
+
     <section id="architecture" aria-labelledby="architecture-heading">
       <p class="eyebrow">Architecture</p>
       <h2 id="architecture-heading">Explicit inputs, bounded collaboration, inspectable evidence.</h2>
@@ -290,11 +307,11 @@
             <li>Unrestricted network access or external learning</li>
             <li>Credentials, secrets, wallets, or payment settlement</li>
             <li>Repository writes or cross-repository mutation</li>
-            <li>Self-modification or production orchestration</li>
+            <li>Merge, release, deployment, or self-governance</li>
           </ul>
         </div>
       </div>
-      <p class="notice">The current ledger and freeze hashes are candidate integrity mechanisms. They require versioned contracts, adversarial fixtures, and reproducibility evidence before they should be treated as stable interchange formats.</p>
+      <p class="notice">The current ledger and freeze hashes are candidate integrity mechanisms. They require versioned contracts, adversarial fixtures, and reproducibility evidence before they should be treated as stable interchange formats. Open pull requests remain candidates until explicitly reconciled and accepted.</p>
     </section>
 
     <section id="onboarding" aria-labelledby="onboarding-heading">
@@ -321,7 +338,7 @@ shasum -a 256 artifacts/p0-baseline.json</code></pre>
   </main>
 
   <footer>
-    <p>QSO-FABRIC documentation describes the current candidate runtime and required verification boundaries. It does not claim sentience, physical quantum execution, production readiness, or accepted release status.</p>
+    <p>QSO-FABRIC documentation describes the current candidate runtime and required verification boundaries. It does not claim sentience, physical quantum execution, production readiness, autonomous portfolio authority, or accepted release status.</p>
   </footer>
 </body>
 </html>
