@@ -2,12 +2,16 @@
 
 QSO-FABRIC is the bounded, deterministic integration harness for four Quantum State Objects: Atlas, Nova, Orion, and Lyra. A researcher supplies one objective, seed, and explicit limits; the runtime produces per-QSO observations and proposals, bounded message exchange, state freeze hashes, and an append-only hash-chained event ledger.
 
+Within the wider portfolio, **A.L.I.S.T.A.I.R.E. is the canonical system and QSO-FABRIC is one subsystem**: the collaboration, integration, and evidence layer. QSO-FABRIC is not the portfolio control plane, credential broker, deployment authority, or unrestricted self-modification engine.
+
 > **Release status:** blocked pending acceptance of the current runtime baseline, packaging and licensing, versioned output contracts, adversarial and rollback fixtures, security evidence, provenance, and read-only upstream compatibility. See [`release.md`](release.md) for the authoritative gates.
 
 ## Documentation
 
 - [GitHub Pages project overview](docs/index.html)
+- [Role in A.L.I.S.T.A.I.R.E.](docs/ALISTAIRE_ROLE.md)
 - [Architecture and trust boundaries](docs/ARCHITECTURE.md)
+- [Concurrent candidate governance](docs/CANDIDATE_GOVERNANCE.md)
 - [Developer onboarding](docs/DEVELOPER_GUIDE.md)
 - [Current output behavior and contract requirements](docs/OUTPUT_CONTRACTS.md)
 - [Active task chain](taskchain.md)
@@ -17,6 +21,8 @@ QSO-FABRIC is the bounded, deterministic integration harness for four Quantum St
 ## Purpose
 
 The current product objective is to stabilize the implemented four-QSO experiment as a reproducible integration harness. Formal verification of the existing runtime comes before additional learning, visualization, payment behavior, production orchestration, or portfolio administration.
+
+This narrow priority supports the long-term autonomous-development objective: A.L.I.S.T.A.I.R.E. needs a reproducible substrate that can distinguish candidate ideas from accepted contracts, detect integrity failures, retain provenance, and roll back safely. Autonomous portfolio planning, branch creation, pull-request preparation, merging, deployment, and governance require a separately chartered control plane rather than an implicit expansion of this runtime.
 
 The four roles are:
 
@@ -42,9 +48,23 @@ flowchart LR
     L --> E
     E --> J[JSON report]
     J --> V[Human review and verification]
+    V -. accepted evidence .-> C[A.L.I.S.T.A.I.R.E. development control plane]
 ```
 
-The generated report is a research artifact. It records what the harness produced; it does not authorize execution or establish that a final proposal is correct.
+The generated report is a research artifact. It records what the harness produced; it does not authorize execution or establish that a final proposal is correct. The dotted control-plane edge is an architectural boundary, not an implemented integration.
+
+## Autonomous-development boundary
+
+QSO-FABRIC may contribute bounded hypotheses, deterministic experiments, contract checks, contradiction reports, and integrity-marked evidence. It does not currently own:
+
+- repository discovery or portfolio prioritization;
+- branch, commit, pull-request, merge, release, or deployment authority;
+- credentials, secrets, wallets, or external service identities;
+- unrestricted network learning or package installation;
+- changes to governance, consent, identity, or safety constraints;
+- automatic acceptance of another repository's code, manifest, or policy.
+
+See [QSO-FABRIC in A.L.I.S.T.A.I.R.E.](docs/ALISTAIRE_ROLE.md) for the capability ladder and [candidate governance](docs/CANDIDATE_GOVERNANCE.md) for rules governing concurrent architecture proposals.
 
 ## Run
 
@@ -88,9 +108,10 @@ Current JSON and hashing behavior is unversioned candidate behavior. Consumers s
 - Outputs are proposals and research artifacts requiring human review.
 - QSO-GENOMES and QuantumStateObjects may become read-only schema/hash-validated dependencies; they do not grant executable authority.
 - Owner-wide repository mutation and portfolio-governance automation are outside QSO-FABRIC's current scope.
+- Open pull requests are candidates, not accepted architecture; concurrent candidates require explicit sequencing and exact-head evidence.
 
 ## Contribution discipline
 
-Work only on the highest-priority unblocked item in [`taskchain.md`](taskchain.md). Preserve deterministic ordering, fail-closed validation, bounded authority, append-only evidence, and explicit rollback. Changes to events, report fields, freeze semantics, seeds, ordering, or canonicalization are contract changes and require versioning, fixtures, migration or rejection behavior, documentation, and retained hashes.
+Work only on the highest-priority unblocked item in [`taskchain.md`](taskchain.md). Preserve deterministic ordering, fail-closed validation, bounded authority, append-only evidence, explicit consent constraints, and rollback. Changes to events, report fields, freeze semantics, seeds, ordering, canonicalization, authority, or external contracts require versioning, fixtures, migration or rejection behavior, documentation, and retained hashes.
 
 See the [developer guide](docs/DEVELOPER_GUIDE.md) for the complete baseline, security, pull-request, and rollback workflow.
