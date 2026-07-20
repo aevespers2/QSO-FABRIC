@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="QSO-FABRIC is the bounded deterministic collaboration and evidence subsystem for A.L.I.S.T.A.I.R.E., coordinating Atlas, Nova, Orion, and Lyra.">
+  <meta name="description" content="QSO-FABRIC is the bounded deterministic collaboration and evidence subsystem for A.L.I.S.T.A.I.R.E., coordinating Atlas, Nova, Orion, and Lyra while exposing contract and gluing obstructions for review.">
   <title>QSO-FABRIC · Bounded Four-QSO Research Harness</title>
   <style>
     :root {
@@ -74,6 +74,7 @@
       <div class="nav-links">
         <a href="#roles">Roles</a>
         <a href="#boundary">Boundary</a>
+        <a href="#gluing">Gluing</a>
         <a href="#onboarding">Onboarding</a>
         <a href="ARCHITECTURE.md">Full docs</a>
       </div>
@@ -82,7 +83,7 @@
       <div>
         <p class="eyebrow">Deterministic · bounded · reviewable</p>
         <h1>Four perspectives. One inspectable run.</h1>
-        <p class="lead">QSO-FABRIC coordinates Atlas, Nova, Orion, and Lyra inside a finite research harness. It records ordered events, state freeze hashes, bounded messages, and final proposals without granting shell, network, credential, wallet, deployment, or repository authority.</p>
+        <p class="lead">QSO-FABRIC coordinates Atlas, Nova, Orion, and Lyra inside a finite research harness. It records ordered events, state freeze hashes, bounded messages, and final proposals without granting shell, network, credential, signing, wallet, deployment, repository, format-standard, or canonical-state authority.</p>
         <div class="actions">
           <a class="button" href="#onboarding">Run the baseline</a>
           <a class="button secondary" href="https://github.com/aevespers2/QSO-FABRIC">View repository</a>
@@ -90,8 +91,8 @@
       </div>
       <aside class="status" aria-label="Current project status">
         <p class="eyebrow">Current status</p>
-        <p><strong>Blocked — unverified runtime and upstream contracts.</strong></p>
-        <p>Packaging, licensing, cross-environment replay, adversarial fixtures, rollback evidence, security review, provenance, and read-only upstream compatibility remain release gates.</p>
+        <p><strong>Blocked — unverified runtime, upstream contracts, and gluing ownership.</strong></p>
+        <p>Packaging, licensing, cross-environment replay, adversarial fixtures, rollback evidence, security review, provenance, read-only upstream compatibility, and format/lifecycle/authority ownership remain release gates.</p>
       </aside>
     </div>
   </header>
@@ -100,7 +101,7 @@
     <section id="roles" aria-labelledby="roles-heading">
       <p class="eyebrow">Current baseline</p>
       <h2 id="roles-heading">A research integration harness, not an autonomous control plane.</h2>
-      <p class="intro">The active task chain prioritizes verification of the implemented four-QSO runtime. Open-ended learning, production orchestration, payment settlement, credentialed action, and owner-wide repository automation are outside the current MVP.</p>
+      <p class="intro">The active task chain prioritizes verification of the implemented four-QSO runtime. Open-ended learning, production orchestration, payment settlement, credentialed action, portfolio-wide serialization, signing, and owner-wide repository automation are outside the current MVP.</p>
       <div class="grid">
         <article class="card"><h3>Atlas</h3><p class="role">Structure and algorithms</p><p>Frames objectives as constrained graphs, invariants, compression problems, and deterministic mappings.</p></article>
         <article class="card"><h3>Nova</h3><p class="role">Verification posture</p><p>Emphasizes failure modes, boundary violations, evidence, tamper detection, and release discipline. The runtime reserves a contradictions field but does not yet populate contradiction records.</p></article>
@@ -112,14 +113,28 @@
     <section id="boundary" aria-labelledby="boundary-heading">
       <p class="eyebrow">A.L.I.S.T.A.I.R.E. boundary</p>
       <h2 id="boundary-heading">Bounded experiment evidence flows to human review.</h2>
-      <p class="intro">QSO-FABRIC contributes deterministic seeded runs away from the wall-clock timeout boundary, integrity-marked events, proposals, and Nova's contradiction-oriented review posture. A separately chartered control plane must own portfolio planning, repository operations, credentials, merge and deployment policy, audit, and cross-repository rollback.</p>
+      <p class="intro">QSO-FABRIC contributes deterministic seeded runs away from the wall-clock timeout boundary, integrity-marked events, proposals, and Nova's contradiction-oriented review posture. Separately chartered owners must retain portfolio planning, repository operations, format and lifecycle standards, capabilities, credentials, merge and deployment policy, audit, signing, and cross-repository rollback.</p>
       <div class="diagram" role="img" aria-label="Human objective flows through the bounded four-QSO runtime into a hash-chained ledger and human review">
         <div class="node">Human objective<br>seed · limits</div><div class="arrow" aria-hidden="true">→</div>
         <div class="node">Atlas · Nova<br>Orion · Lyra</div><div class="arrow" aria-hidden="true">→</div>
-        <div class="node">Hash-chained<br>ledger</div><div class="arrow" aria-hidden="true">→</div>
+        <div class="node">Local hash-chained<br>ledger</div><div class="arrow" aria-hidden="true">→</div>
         <div class="node">JSON report<br>human review</div>
       </div>
-      <p class="notice">The current objective is retained in full in the report and first event, and timeout placement depends on wall-clock scheduling. The present implementation therefore does not claim a complete report-size bound or deterministic timeout-path hashes.</p>
+      <p class="notice">The current objective is retained in full in the report and first event, and timeout placement depends on wall-clock scheduling. The present implementation therefore does not claim a complete report-size/privacy bound or deterministic timeout-path hashes.</p>
+    </section>
+
+    <section id="gluing" aria-labelledby="gluing-heading">
+      <p class="eyebrow">Cross-repository composition</p>
+      <h2 id="gluing-heading">Candidate contracts do not glue automatically.</h2>
+      <p class="intro">PR #16 proposes a disabled QSIO adapter. PR #17 proposes QSO envelopes, composition roots, serialization families, hashes, signatures, and mutation classes. Both intersect with QSO-GENOMES, QuantumStateObjects, <code>qsio-kernel</code>, and Repository <code>1</code>. Their local coherence does not decide portfolio ownership.</p>
+      <div class="grid">
+        <article class="card"><h3>Material obstruction</h3><p>The portfolio lacks one accepted owner and vocabulary for QSO identity, serialization, lifecycle, mutation, ledger classes, capability, signing, privacy, and recovery.</p></article>
+        <article class="card"><h3>Required witnesses</h3><p>Genome → format → runtime, format → runtime → Fabric, Fabric → QSIO → Repository 1, freeze → revocation → recovery, and evidence → interface → correction must commute under fail-closed fixtures.</p></article>
+      </div>
+      <div class="actions">
+        <a class="button" href="OBSTRUCTION_AND_GLUING.md">Review obstruction ledger</a>
+        <a class="button secondary" href="../punchlist.md">Review punch list</a>
+      </div>
     </section>
 
     <section id="onboarding" aria-labelledby="onboarding-heading">
@@ -144,6 +159,8 @@ shasum -a 256 artifacts/p0-baseline.json</code></pre>
             <li><a href="DEVELOPER_GUIDE.md">Developer guide</a></li>
             <li><a href="OUTPUT_CONTRACTS.md">Output contracts</a></li>
             <li><a href="CANDIDATE_GOVERNANCE.md">Candidate governance</a></li>
+            <li><a href="OBSTRUCTION_AND_GLUING.md">Obstruction and gluing analysis</a></li>
+            <li><a href="https://github.com/aevespers2/QSO-FABRIC/blob/main/punchlist.md">Release punch list</a></li>
             <li><a href="https://github.com/aevespers2/QSO-FABRIC/blob/main/release.md">Release gates</a></li>
             <li><a href="https://github.com/aevespers2/QSO-FABRIC/blob/main/taskchain.md">Task chain</a></li>
           </ul>
@@ -153,7 +170,7 @@ shasum -a 256 artifacts/p0-baseline.json</code></pre>
   </main>
 
   <footer>
-    <p>QSO-FABRIC documentation describes a candidate runtime and its verification boundaries. It does not claim sentience, physical quantum execution, production readiness, autonomous portfolio authority, or accepted release status.</p>
+    <p>QSO-FABRIC documentation describes a candidate runtime and its verification boundaries. It does not claim sentience, physical quantum execution, production readiness, autonomous portfolio authority, canonical format ownership, or accepted release status.</p>
   </footer>
 </body>
 </html>
