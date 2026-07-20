@@ -29,7 +29,7 @@ The four roles are:
 | QSO | Focus |
 |---|---|
 | Atlas | Mathematical structure, algorithms, compression, and cross-domain mapping |
-| Nova | Verification, anomaly detection, testing, security, and contradiction analysis |
+| Nova | Verification, anomaly detection, testing, security, and contradiction-oriented review |
 | Orion | Software architecture, interfaces, protocols, and systems composition |
 | Lyra | Language, documentation, ontology, epistemology, and human context |
 
@@ -55,7 +55,7 @@ The generated report is a research artifact. It records what the harness produce
 
 ## Autonomous-development boundary
 
-QSO-FABRIC may contribute bounded hypotheses, deterministic experiments, contract checks, contradiction reports, and integrity-marked evidence. It does not currently own:
+QSO-FABRIC may contribute bounded hypotheses, deterministic experiments away from the wall-clock timeout boundary, contract checks, Nova's contradiction-oriented review posture, and integrity-marked evidence. The baseline reserves a `contradictions` field but does not yet populate contradiction records. QSO-FABRIC does not currently own:
 
 - repository discovery or portfolio prioritization;
 - branch, commit, pull-request, merge, release, or deployment authority;
@@ -64,7 +64,7 @@ QSO-FABRIC may contribute bounded hypotheses, deterministic experiments, contrac
 - changes to governance, consent, identity, or safety constraints;
 - automatic acceptance of another repository's code, manifest, or policy.
 
-See [QSO-FABRIC in A.L.I.S.T.A.I.R.E.](docs/ALISTAIRE_ROLE.md) for the capability ladder and [candidate governance](docs/CANDIDATE_GOVERNANCE.md) for rules governing concurrent architecture proposals.
+The previously scheduled cross-repository Muse bootstrap workflow is removed from this candidate. See [QSO-FABRIC in A.L.I.S.T.A.I.R.E.](docs/ALISTAIRE_ROLE.md) for the capability ladder and [candidate governance](docs/CANDIDATE_GOVERNANCE.md) for rules governing concurrent architecture proposals.
 
 ## Run
 
@@ -103,8 +103,9 @@ Current JSON and hashing behavior is unversioned candidate behavior. Consumers s
 ## Safety boundary
 
 - No shell, package-installation, credential, wallet, or unrestricted network authority is granted to QSOs.
-- Messages, rounds, message length, and runtime are bounded.
-- The experiment stops bounded iteration at configured limits and records its result.
+- Round count, per-QSO message count, and per-message text are bounded by configured limits.
+- The full objective remains present in the top-level report and first event, so the current implementation does not provide a complete report-size or memory bound.
+- Wall-clock timeout placement depends on `time.monotonic()` and scheduling; timeout-path event counts and hashes are not guaranteed deterministic.
 - Outputs are proposals and research artifacts requiring human review.
 - QSO-GENOMES and QuantumStateObjects may become read-only schema/hash-validated dependencies; they do not grant executable authority.
 - Owner-wide repository mutation and portfolio-governance automation are outside QSO-FABRIC's current scope.
