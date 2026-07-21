@@ -28,10 +28,11 @@ Repository `0` and Repository `1` are the current candidates for portable orches
 | P1 | Add package, license, and versioned output contracts | QSOBuilder | P0 | PROPOSED | Clean installation works; supported Python versions are declared; event, ledger, freeze-point, limit, and report formats have explicit versions and canonicalization rules. |
 | P2 | Publish deterministic security and failure fixtures | QSOBuilder | P1 | PROPOSED | Positive, negative, boundary, timeout, tamper, interruption, partial-write, consent, and rollback fixtures pass with retained hashes and reports. |
 | P3 | Validate upstream compatibility without importing authority | Builder | QSO-GENOMES accepted manifest and QuantumStateObjects runnable baseline | BLOCKED | Genome/runtime manifests are checked by schema version and hash; missing or incompatible artifacts fail closed; external code is not imported or executed. |
-| P4 | Resolve QSO format and QSIO gluing ownership | Architect | P0–P3, portfolio ownership decisions | BLOCKED | Canonical format/registry owner, field vocabulary, lifecycle/mutation authority, ledger classes, capability boundary, privacy, and recovery semantics are approved with pairwise and triple-overlap fixtures. |
-| P5 | Reconcile selected candidates on one trusted base | Builder | P4 and explicit candidate selection | PROPOSED | Selected branches are rebased, shared invariants are resolved, all task/release/docs files are updated, and exact-head evidence is regenerated for the combined result. |
+| P4A | Approve a decomposed QSO format ownership model | Architect | P0–P3, portfolio ownership decisions | BLOCKED | A neutral envelope/conformance owner, repository-owned profiles, canonicalization status, registry process, authority separation, privacy, correction, recovery, and migration path are accepted. |
+| P4B | Validate format and QSIO gluing | Builder | P4A | BLOCKED | Pairwise and triple-overlap fixtures prove genome, envelope, runtime, Fabric, Bridge/QSIO, Repository `1`, freeze/revocation/recovery, and interface correction semantics commute and fail closed. |
+| P5 | Reconcile selected candidates on one trusted base | Builder | P4A–P4B and explicit candidate selection | PROPOSED | Selected branches are rebased, shared invariants are resolved, all task/release/docs files are updated, and exact-head evidence is regenerated for the combined result. |
 
-Detailed acceptance work is tracked in [`punchlist.md`](punchlist.md). Cross-repository incompatibilities and witness requirements are tracked in [`docs/OBSTRUCTION_AND_GLUING.md`](docs/OBSTRUCTION_AND_GLUING.md).
+Detailed acceptance work is tracked in [`punchlist.md`](punchlist.md). Cross-repository incompatibilities and witness requirements are tracked in [`docs/OBSTRUCTION_AND_GLUING.md`](docs/OBSTRUCTION_AND_GLUING.md). The ownership decomposition and PR #17 disposition options are tracked in [`docs/FORMAT_GOVERNANCE.md`](docs/FORMAT_GOVERNANCE.md).
 
 ## Concurrent candidate rule
 
@@ -42,7 +43,9 @@ The current high-impact candidates include:
 - PR #16: disabled QSIO mapping and adapter candidate;
 - PR #17: QSO envelope, composition-root, registry, serialization, and mutation-contract candidate.
 
-PR #16 and PR #17 overlap with QSO-GENOMES, QuantumStateObjects, and `qsio-kernel`. Their repository location and internal consistency do not settle portfolio ownership.
+PR #16 and PR #17 overlap with QSO-GENOMES, QuantumStateObjects, `qsio-kernel`, Repository `1`, Bridge, Seeker, and review interfaces. Their repository location and internal consistency do not settle portfolio ownership.
+
+PR #17 additionally combines storage mode, proposal source, authority requirement, derivation, and lifetime into one mutation-class vocabulary, and labels canonical CBOR normative while the verified authoring path is canonical JSON. Those are design obstructions, not implementation failures; they require decomposition and explicit ownership before acceptance.
 
 A candidate may enter the active chain only after it:
 
@@ -63,7 +66,7 @@ QSO-FABRIC uses the following compatibility rule:
 1. Pairwise adapters are insufficient when three or more repositories share identity, lifecycle, authority, or evidence semantics.
 2. A valid hash, envelope, signature, ledger entry, Witness record, or successful command does not independently grant authority.
 3. Local experiment evidence, accepted cross-repository records, and canonical portfolio state are separate classes.
-4. Mutation classes are requests subject to authoritative policy, not self-executing permissions.
+4. Mutation behavior must be decomposed into storage, proposer, required authority, derivation, retention, and correction semantics; no shared label may silently self-authorize a change.
 5. Evidence from one branch head does not validate a rebased or combined head.
 6. Missing ownership or incompatible semantics fail closed and remain `BLOCKED`.
 
@@ -87,7 +90,7 @@ The review evidence remains preserved for any future control-plane proposal. Any
 - throttle mutations and recover or roll back partial runs;
 - live in a dedicated governance/control repository unless ownership by QSO-FABRIC is explicitly approved.
 
-The five unresolved review findings for organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling are retained as rejected-proposal evidence, not active runtime blockers.
+The five unresolved review findings for organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling/recovery are retained as rejected-proposal evidence, not active runtime blockers.
 
 ## Builder rules
 
@@ -99,6 +102,7 @@ For each task record the exact source commit, base, branch, Python/OS/tool versi
 
 ## Builder log
 
+- 2026-07-20 — Added the QSO format governance and ownership guide, decomposing PR #17 into a neutral envelope/conformance layer, repository-owned profiles, independent authority records, and explicit pairwise/triple-overlap fixtures. No owner or candidate was accepted.
 - 2026-07-20 — Added the obstruction and gluing ledger and release punch list; documented PR #16 and PR #17 as separate candidates with unresolved format, lifecycle, ledger, capability, privacy, and recovery ownership. No candidate or authority was accepted.
 - 2026-07-19 — Documented QSO-FABRIC as the bounded collaboration and evidence subsystem within A.L.I.S.T.A.I.R.E.; retained P0–P3 ordering and separated autonomous-development control-plane authority from the runtime.
 - 2026-07-19 — Added candidate-governance rules for concurrent architecture pull requests; no candidate was accepted or reprioritized.
