@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="QSO-FABRIC is the bounded deterministic collaboration and evidence subsystem for A.L.I.S.T.A.I.R.E., coordinating Atlas, Nova, Orion, and Lyra while exposing contract and gluing obstructions for review.">
+  <meta name="description" content="QSO-FABRIC is the bounded deterministic collaboration and evidence subsystem for A.L.I.S.T.A.I.R.E., coordinating Atlas, Nova, Orion, and Lyra while exposing contract, ownership, and gluing obstructions for review.">
   <title>QSO-FABRIC · Bounded Four-QSO Research Harness</title>
   <style>
     :root {
@@ -76,7 +76,7 @@
         <a href="#boundary">Boundary</a>
         <a href="#gluing">Gluing</a>
         <a href="#onboarding">Onboarding</a>
-        <a href="ARCHITECTURE.md">Full docs</a>
+        <a href="FORMAT_GOVERNANCE.md">Format governance</a>
       </div>
     </nav>
     <div class="hero">
@@ -126,13 +126,16 @@
     <section id="gluing" aria-labelledby="gluing-heading">
       <p class="eyebrow">Cross-repository composition</p>
       <h2 id="gluing-heading">Candidate contracts do not glue automatically.</h2>
-      <p class="intro">PR #16 proposes a disabled QSIO adapter. PR #17 proposes QSO envelopes, composition roots, serialization families, hashes, signatures, and mutation classes. Both intersect with QSO-GENOMES, QuantumStateObjects, <code>qsio-kernel</code>, and Repository <code>1</code>. Their local coherence does not decide portfolio ownership.</p>
+      <p class="intro">PR #16 proposes a disabled QSIO adapter. PR #17 proposes QSO envelopes, composition roots, serialization families, hashes, signatures, and mutation classes. Both intersect with QSO-GENOMES, QuantumStateObjects, <code>qsio-kernel</code>, Repository <code>1</code>, Bridge, Seeker, and review interfaces. Their local coherence does not decide portfolio ownership.</p>
       <div class="grid">
-        <article class="card"><h3>Material obstruction</h3><p>The portfolio lacks one accepted owner and vocabulary for QSO identity, serialization, lifecycle, mutation, ledger classes, capability, signing, privacy, and recovery.</p></article>
-        <article class="card"><h3>Required witnesses</h3><p>Genome → format → runtime, format → runtime → Fabric, Fabric → QSIO → Repository 1, freeze → revocation → recovery, and evidence → interface → correction must commute under fail-closed fixtures.</p></article>
+        <article class="card"><h3>Material obstruction</h3><p>PR #17 combines neutral envelope mechanics with genome, runtime, Fabric, transport, mutation, signing, and authority concerns that do not share one natural owner.</p></article>
+        <article class="card"><h3>Lowest-coupling repair</h3><p>Use a small neutral envelope and conformance layer, repository-owned payload profiles, and independent Repository 1 capability and canonical-state decisions.</p></article>
+        <article class="card"><h3>Serialization status</h3><p>Canonical JSON is the implemented authoring profile. Canonical CBOR, package, stream, and signature profiles remain proposed until byte-level conformance evidence exists.</p></article>
+        <article class="card"><h3>Required witnesses</h3><p>Genome → envelope → runtime, envelope → runtime → Fabric, Fabric → Bridge/QSIO → Repository 1, freeze → revocation → recovery, and evidence → interface → correction must commute under fail-closed fixtures.</p></article>
       </div>
       <div class="actions">
-        <a class="button" href="OBSTRUCTION_AND_GLUING.md">Review obstruction ledger</a>
+        <a class="button" href="FORMAT_GOVERNANCE.md">Review format governance</a>
+        <a class="button secondary" href="OBSTRUCTION_AND_GLUING.md">Review obstruction ledger</a>
         <a class="button secondary" href="../punchlist.md">Review punch list</a>
       </div>
     </section>
@@ -159,6 +162,7 @@ shasum -a 256 artifacts/p0-baseline.json</code></pre>
             <li><a href="DEVELOPER_GUIDE.md">Developer guide</a></li>
             <li><a href="OUTPUT_CONTRACTS.md">Output contracts</a></li>
             <li><a href="CANDIDATE_GOVERNANCE.md">Candidate governance</a></li>
+            <li><a href="FORMAT_GOVERNANCE.md">QSO format governance and ownership</a></li>
             <li><a href="OBSTRUCTION_AND_GLUING.md">Obstruction and gluing analysis</a></li>
             <li><a href="https://github.com/aevespers2/QSO-FABRIC/blob/main/punchlist.md">Release punch list</a></li>
             <li><a href="https://github.com/aevespers2/QSO-FABRIC/blob/main/release.md">Release gates</a></li>
