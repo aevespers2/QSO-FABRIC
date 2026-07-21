@@ -1,0 +1,1 @@
+{"registry_version":"0.1.0","hash":[{"name":"sha256","status":"required"},{"name":"blake3","status":"experimental"}],"canonicalization":[{"name":"jcs","reference":"RFC 8785","status":"target"},{"name":"qso-json-0.1","status":"development"}],"signature":[{"name":"ed25519","status":"planned"},{"name":"ml-dsa","status":"planned"}]}

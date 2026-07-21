@@ -1,0 +1,1 @@
+{"registry_version":"0.1.0","media_types":[{"format":"QSO-CORE","media_type":"application/qso+json"},{"format":"QSO-PACKAGE","media_type":"application/qso-package"},{"format":"QSO-STREAM","media_type":"application/qso-stream"},{"format":"QSO-CBOR","media_type":"application/qso+cbor"}]}

@@ -1,0 +1,5 @@
+[project]
+name='qso-formats'
+version='0.1.0'
+description='Reference tools and schemas for Quantum State Object file formats'
+requires-python='>=3.11'

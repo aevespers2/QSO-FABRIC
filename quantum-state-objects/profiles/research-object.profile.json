@@ -1,0 +1,1 @@
+{"profile":"QSO-RESEARCH-OBJECT-0.1","required_formats":["QSO-CORE","QSO-MANIFEST","QSO-MODEL","QSO-EVIDENCE","QSO-PROVENANCE","QSO-REPORT"],"requirements":{"assumptions_explicit":true,"uncertainty_explicit":true,"reproducible_inputs":true,"immutable_results":true}}

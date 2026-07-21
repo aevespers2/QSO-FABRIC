@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"qso://schemas/workflow/0.1.0","allOf":[{"$ref":"../common/qso-envelope.schema.json"}],"properties":{"payload":{"type":"object","required":["steps"],"properties":{"steps":{"type":"array"},"dependencies":{"type":"array"},"recovery":{"type":"object"}},"additionalProperties":false}}}

@@ -1,0 +1,1 @@
+{"profile":"QSO-MINIMAL-0.1","required_formats":["QSO-CORE","QSO-MANIFEST","QSO-IDENTITY"],"required_algorithms":{"hash":["sha256"],"canonicalization":["jcs"]},"forbid_unresolved_required_references":true}

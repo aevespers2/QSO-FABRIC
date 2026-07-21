@@ -1,0 +1,1 @@
+{"profile":"QSO-GOVERNED-SELF-MODIFYING-0.1","required_formats":["QSO-CORE","QSO-IDENTITY","QSO-GENOME","QSO-STATE","QSO-MUTATION","QSO-GOVERNANCE","QSO-ETHICS","QSO-PROVENANCE","QSO-SIGNATURE"],"requirements":{"proposal_before_patch":true,"authorization_before_apply":true,"rollback_reference":true,"append_only_provenance":true,"constitutional_precedence":true}}

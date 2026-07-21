@@ -1,0 +1,1 @@
+{"profile":"QSO-UNIKERNEL-0.1","required_formats":["QSO-CORE","QSO-MANIFEST","QSO-IDENTITY","QSO-CAPABILITY","QSO-EXECUTABLE","QSO-SECURITY","QSO-SIGNATURE","QSO-LOCK"],"requirements":{"reproducible_build":true,"immutable_root":true,"verified_boot_manifest":true,"network_default_deny":true}}

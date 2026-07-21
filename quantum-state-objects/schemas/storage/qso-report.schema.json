@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"qso://schemas/report/0.1.0","allOf":[{"$ref":"../common/qso-envelope.schema.json"}],"properties":{"payload":{"type":"object","required":["title","findings"],"properties":{"title":{"type":"string"},"summary":{"type":"string"},"findings":{"type":"array"},"references":{"type":"array"}},"additionalProperties":false}}}
