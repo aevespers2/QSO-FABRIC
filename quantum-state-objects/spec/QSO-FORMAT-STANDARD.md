@@ -17,11 +17,13 @@ Every serialized QSO family object contains `qso` metadata and a `payload`. Requ
 
 ## Integrity
 
-Hashes cover canonical metadata and payload, excluding transport-only fields. Signatures bind the object identifier, schema identifier, canonicalization algorithm, hash algorithm, and content hash.
+Hashes cover canonical metadata and payload while excluding the `qso.content_hash` field itself and transport-only fields. Excluding the digest field prevents a circular hash definition. Signatures bind the object identifier, schema identifier, canonicalization algorithm, hash algorithm, and content hash.
+
+For the version 0.1 JSON authoring profile, the SHA-256 preimage is UTF-8 JSON serialized with lexicographically sorted keys, no insignificant whitespace, preserved Unicode, no non-finite numbers, and the top-level `qso.content_hash` field omitted. A validator must fail closed on malformed, placeholder, mismatched, or unsupported root digests. Canonical CBOR remains the planned normative binary profile and requires a separately reviewed canonicalization implementation.
 
 ## Composition
 
-A `.qso` composition root references specialized objects by immutable object identifier and content hash. Implementations must reject unresolved required references and hash mismatches.
+A `.qso` composition root references specialized objects by immutable object identifier and content hash. Implementations must reject unresolved required references and hash mismatches before bundle acceptance. A structural authoring validator may check reference shape and digest syntax without claiming that external objects have been resolved; that limitation must be explicit.
 
 ## Evolution
 
