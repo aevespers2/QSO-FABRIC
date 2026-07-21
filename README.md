@@ -13,6 +13,7 @@ Within the wider portfolio, **A.L.I.S.T.A.I.R.E. is the canonical system and QSO
 - [Architecture and trust boundaries](docs/ARCHITECTURE.md)
 - [Concurrent candidate governance](docs/CANDIDATE_GOVERNANCE.md)
 - [Obstruction and gluing analysis](docs/OBSTRUCTION_AND_GLUING.md)
+- [QSO format governance and ownership](docs/FORMAT_GOVERNANCE.md)
 - [Developer onboarding](docs/DEVELOPER_GUIDE.md)
 - [Current output behavior and contract requirements](docs/OUTPUT_CONTRACTS.md)
 - [Active task chain](taskchain.md)
@@ -62,7 +63,11 @@ Two newer draft candidates require explicit gluing decisions rather than implici
 - **PR #16** proposes a disabled QSIO adapter mapping Fabric concepts to QSO, QSI, QSIO, Nexis, Telion, Memora, Lumen, Umbra, and Witness records.
 - **PR #17** proposes a QSO envelope, composition root, registry, mutation classes, serialization families, validator, and example under `quantum-state-objects/`.
 
-These candidates overlap responsibilities already proposed for QSO-GENOMES, QuantumStateObjects, and `qsio-kernel`. They remain candidates until the portfolio assigns canonical ownership for identity, serialization, lifecycle, mutation, integrity, authoritative ledgers, capabilities, signing, privacy, and recovery. See the [obstruction and gluing analysis](docs/OBSTRUCTION_AND_GLUING.md).
+These candidates overlap responsibilities already proposed for QSO-GENOMES, QuantumStateObjects, `qsio-kernel`, Repository `1`, Bridge, QSO-SEEKER, and review interfaces. They remain candidates until the portfolio assigns canonical ownership for identity, serialization, lifecycle, mutation, integrity, authoritative ledgers, capabilities, signing, privacy, correction, and recovery.
+
+The [QSO format governance and ownership guide](docs/FORMAT_GOVERNANCE.md) documents the lowest-coupling repair: a deliberately small neutral envelope and conformance layer, repository-owned payload profiles, Repository `1` authority records, and Fabric-owned experiment/event/freeze contracts. It also records that PR #17 currently calls canonical CBOR normative while only the canonical JSON authoring path is implemented, and that its combined mutation classes mix storage, authorship, lifetime, derivation, and authority concerns.
+
+See the [obstruction and gluing analysis](docs/OBSTRUCTION_AND_GLUING.md) for the complete portfolio witness ledger.
 
 ## Autonomous-development boundary
 
