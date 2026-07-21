@@ -15,7 +15,7 @@ No terrorism attribution should be made without technical evidence. Preserve art
 1. **Trojanized executable artifacts:** malicious `.jar`, launcher, plugin, mod, native library, or script.
 2. **Unsafe deserialization:** arbitrary Java object reconstruction or equivalent dynamic object loading from network data.
 3. **Logging/interpolation injection:** attacker-controlled strings reaching lookup-capable logging or template systems.
-4. **Parser abuse:** oversized, deeply nested, compressed, recursive, malformed, or path-traversing world/NBT/archive content.
+4. **Parser abuse:** oversized, deeply nested, compressed, recursive, malformed, duplicate-key, non-finite-number, or path-traversing content.
 5. **Credential theft:** access to Microsoft, Discord, GitHub, hosting, SSH, cloud, browser, or CI credentials.
 6. **Supply-chain compromise:** unsigned releases, mutable update endpoints, compromised maintainers, CI tokens, or dependencies.
 7. **Capability escalation:** an analytical object obtains shell, process, package-installation, filesystem-write, wallet, credential, or unrestricted-network authority.
@@ -24,6 +24,8 @@ No terrorism attribution should be made without technical evidence. Preserve art
 
 QSO-FABRIC must remain a bounded analytical runtime. Untrusted content may be represented as text, metadata, and cryptographic hashes, but must never be executed, imported, dynamically loaded, unpacked, installed, or granted ambient authority.
 
+An `accepted` artifact verdict is only a deterministic screening result. It is not malware clearance, authenticity proof, signer verification, or authorization to open, import, execute, unpack, or publish an artifact.
+
 ### Enforced invariants
 
 - No shell or child-process spawning.
@@ -31,10 +33,11 @@ QSO-FABRIC must remain a bounded analytical runtime. Untrusted content may be re
 - No credential, wallet, or browser-session access.
 - No unrestricted network authority.
 - No automatic extraction of compressed or archive artifacts.
-- No executable or script artifacts accepted into the runtime.
+- No executable or script artifacts accepted when identified by suffix, media type, shebang, or recognized executable/archive magic.
 - No general-purpose object deserialization.
-- Bounded UTF-8 JSON only, with depth, node, and byte ceilings.
-- Known lookup/interpolation patterns rejected before logging or reasoning.
+- Strict bounded UTF-8 JSON only, with duplicate-key, non-finite-number, depth, node, and byte rejection.
+- Known lookup/interpolation patterns and unsafe control characters rejected before logging or reasoning.
+- Capability requests are restricted to an explicit bounded analytical allowlist; denied, malformed, and unknown capability names fail closed.
 - Artifact decisions are deterministic and include SHA-256 provenance.
 - Security controls fail closed.
 
@@ -42,11 +45,11 @@ QSO-FABRIC must remain a bounded analytical runtime. Untrusted content may be re
 
 The module `qso_runtime.security_boundary` provides:
 
-- `inspect_artifact`: rejects executable suffixes, archive suffixes, executable media types, and common executable/archive magic bytes while producing a deterministic SHA-256 verdict.
-- `safe_json_loads`: permits JSON only under configured byte, depth, node, and text limits.
-- `sanitize_external_text`: rejects NUL bytes and lookup-style interpolation patterns and strips unsafe control characters.
-- `enforce_capability_boundary`: blocks requests for shell, process spawning, dynamic loading, package installation, filesystem writes, credentials, wallets, and unrestricted networking.
-- `SecurityLimits`: central bounded-input configuration.
+- `inspect_artifact`: rejects executable and archive suffixes, parameterized executable/archive media types, script shebangs, and common executable/archive magic bytes while producing a deterministic SHA-256 screening verdict.
+- `safe_json_loads`: permits strict JSON only under configured byte, depth, node, duplicate-key, non-finite-number, and text limits.
+- `sanitize_external_text`: normalizes line endings and rejects NULs, unsafe control characters, and lookup-style interpolation patterns without silently rewriting security-significant content.
+- `enforce_capability_boundary`: permits only named bounded analytical capabilities and rejects denied, malformed, non-string, and unknown capability requests.
+- `SecurityLimits`: validates a positive-integer bounded-input configuration.
 
 ## Operational response for suspected hostile artifacts
 
@@ -74,9 +77,12 @@ The module `qso_runtime.security_boundary` provides:
 A release is not security-ready unless:
 
 - hostile artifact tests pass;
-- executable and archive inputs fail closed;
-- lookup-injection tests pass;
-- JSON depth and size limits are enforced;
-- denied capabilities cannot be requested indirectly;
+- executable, script, and archive signals fail closed across suffix, media-type, and magic-byte paths;
+- renamed archive and parameterized media-type bypass tests pass;
+- lookup-injection and unsafe-control-character tests pass;
+- JSON duplicate keys, non-finite values, depth, node, and size violations are rejected;
+- malformed, denied, and unknown capabilities fail closed;
+- invalid limit configurations are rejected;
 - no QSO code path invokes a shell, package manager, dynamic loader, credential store, wallet, or unrestricted network client;
-- hashes and rejection reasons remain deterministic under replay.
+- hashes and rejection reasons remain deterministic under replay; and
+- accepted screening verdicts are never represented as malware clearance or execution authorization.
