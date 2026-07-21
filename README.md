@@ -20,3 +20,8 @@ The runner produces deterministic per-QSO reports, bounded message exchange, fre
 - Messages and rounds are bounded.
 - The experiment stops at configured runtime limits.
 - Outputs are proposals and research artifacts requiring human review.
+- Executables, scripts, Java archives, and compressed containers are rejected from QSO artifact ingestion.
+- Structured input uses bounded JSON parsing with byte, depth, node, and text-injection limits.
+- Capability requests fail closed when they include process spawning, dynamic loading, filesystem writes, credentials, wallets, or unrestricted networking.
+
+See [`docs/security/phantomblock-threat-briefing.md`](docs/security/phantomblock-threat-briefing.md) for the threat model and [`qso_runtime/security_boundary.py`](qso_runtime/security_boundary.py) for the implemented controls.
