@@ -5,7 +5,7 @@
     "schema": "qso://schemas/core/0.1.0",
     "object_id": "qso:core:example-minimal",
     "created_at": "2026-07-20T00:00:00Z",
-    "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "content_hash": "sha256:717be59d851af8d8d09fca78dccbc1266e3e7642be7bb3567127c07e32243ab5",
     "mutation_class": "constitutional",
     "payload_encoding": "json"
   },
@@ -13,13 +13,13 @@
     "manifest": {
       "object_id": "qso:manifest:example-minimal",
       "format": "QSO-MANIFEST",
-      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "content_hash": "sha256:193cd6befa82e4eab91d0cba1816212b493f8c9da43fec956d76d7c7101a3422",
       "required": true
     },
     "identity": {
       "object_id": "qso:identity:example-minimal",
       "format": "QSO-IDENTITY",
-      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "content_hash": "sha256:b33dae7f82b71cb95e1651021fc5f55ee04f9440ecd522ee605ff0e8984cb986",
       "required": true
     },
     "components": [],
