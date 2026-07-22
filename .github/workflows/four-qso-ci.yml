@@ -42,6 +42,15 @@ jobs:
       - name: Install bounded test dependency
         run: python -m pip install --disable-pip-version-check pytest==8.4.1
 
+      - name: Run hostile QSO package corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/four-qso
+          python -m pytest -q quantum-state-objects/tests/test_security.py \
+            --junitxml=reports/four-qso/package-boundary.xml \
+            | tee reports/four-qso/package-boundary.log
+
       - name: Run repository tests
         shell: bash
         run: |
@@ -91,6 +100,13 @@ jobs:
           printf '%s\n' "${{ github.event.pull_request.head.sha || github.sha }}" > reports/four-qso/exact-head.txt
           python --version > reports/four-qso/python-version.txt 2>&1
           git status --porcelain > reports/four-qso/git-status.txt
+          sha256sum \
+            quantum-state-objects/tests/fixtures/hostile-package-corpus.json \
+            quantum-state-objects/tests/test_security.py \
+            quantum-state-objects/tools/qso_pack.py \
+            quantum-state-objects/tools/qso_unpack.py \
+            quantum-state-objects/spec/PACKAGING.md \
+            > reports/four-qso/package-boundary-inputs.sha256
           if [ -f artifacts/four_qso_report.json ]; then
             cp artifacts/four_qso_report.json reports/four-qso/
           fi
