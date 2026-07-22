@@ -1,20 +1,45 @@
 {
   "registry_version": "0.1.0",
   "source_policy": "preserve",
-  "conversions": [{
-    "conversion_id": "consent-policy-to-qso-governance-v1",
-    "status": "converted",
-    "source": {
-      "path": ".consent/consent-capacity-lock-v1.json",
-      "content_hash": "sha256:5fffd22b3e400b1f5773da8cd0e84bb44651a4d8121ac7e5a2375040dd9ca8dd"
-    },
-    "target": {
-      "path": "quantum-state-objects/conversions/output/governance/consent-capacity-lock-v1.qgov.json",
-      "format": "QSO-GOVERNANCE",
-      "object_id": "qso:governance:consent-capacity-lock-v1",
-      "content_hash": "sha256:dbaeb04633bee44e40a323bfe5c11e74a9fbc9f1c8b36bf9421bc86b9093d85f"
-    },
-    "provenance": "quantum-state-objects/conversions/provenance/consent-capacity-lock-v1.qprov.json",
-    "reversible": true
-  }]
+  "conversions": [
+    {
+      "conversion_id": "consent-policy-to-qso-governance-v1",
+      "status": "converted",
+      "source": {
+        "path": ".consent/consent-capacity-lock-v1.json",
+        "content_hash": "sha256:5fffd22b3e400b1f5773da8cd0e84bb44651a4d8121ac7e5a2375040dd9ca8dd"
+      },
+      "target": {
+        "path": "quantum-state-objects/conversions/output/governance/consent-capacity-lock-v1.qgov.json",
+        "format": "QSO-GOVERNANCE",
+        "object_id": "qso:governance:consent-capacity-lock-v1",
+        "content_hash": "sha256:dbaeb04633bee44e40a323bfe5c11e74a9fbc9f1c8b36bf9421bc86b9093d85f"
+      },
+      "provenance": "quantum-state-objects/conversions/provenance/consent-capacity-lock-v1.qprov.json",
+      "reversible": true
+    }
+  ],
+  "adapters": [
+    {
+      "conversion_id": "four-qso-report-to-qso-report-v1",
+      "status": "ready",
+      "source_pattern": "artifacts/four_qso_report.json",
+      "source_type": "bounded-four-qso-experiment-report",
+      "tool": "quantum-state-objects/tools/convert_four_qso_report.py",
+      "targets": [
+        {
+          "format": "QSO-REPORT",
+          "content": "objective, per-QSO observations, inferences, contradictions, proposals, and freeze points"
+        },
+        {
+          "format": "QSO-PROVENANCE",
+          "content": "append-only source events, ledger verification state, limits, seed, and final event hash"
+        }
+      ],
+      "source_preserved": true,
+      "deterministic_given_timestamp": true,
+      "reversible": true,
+      "tests": "quantum-state-objects/tests/test_four_qso_conversion.py"
+    }
+  ]
 }
