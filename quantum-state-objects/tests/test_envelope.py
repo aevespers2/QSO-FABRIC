@@ -35,6 +35,18 @@ class EnvelopeTests(unittest.TestCase):
     def test_minimal_example_is_valid(self):
         self.assertEqual([], self.validator.validate(self.example))
 
+    def test_mutation_example_is_valid(self):
+        mutation = json.loads(
+            (ROOT / "examples" / "mutation" / "state-change.qmut.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual([], self.validator.validate(mutation))
+
+    def test_duplicate_json_keys_fail_closed(self):
+        with self.assertRaisesRegex(ValueError, "duplicate JSON key: qso"):
+            self.validator.strict_object([("qso", {}), ("qso", {})])
+
     def test_missing_format_fails(self):
         del self.example["qso"]["format"]
         self.rehash()
