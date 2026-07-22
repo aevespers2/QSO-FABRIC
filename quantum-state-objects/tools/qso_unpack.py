@@ -84,6 +84,23 @@ def _is_regular_member(info: zipfile.ZipInfo) -> bool:
     return mode == 0 or stat.S_ISREG(mode)
 
 
+def _read_bounded(
+    zf: zipfile.ZipFile, info: zipfile.ZipInfo, limit: int = MAX_MEMBER_BYTES
+) -> bytes:
+    chunks: list[bytes] = []
+    total = 0
+    with zf.open(info, "r") as source:
+        while True:
+            chunk = source.read(min(64 * 1024, limit - total + 1))
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > limit:
+                raise ValueError("oversized package member")
+            chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _validate_archive_members(zf: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
     infos = zf.infolist()
     if len(infos) > MAX_ENTRIES + 1:
@@ -109,7 +126,7 @@ def _validate_archive_members(zf: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]
             raise ValueError("oversized package")
         members[name] = info
         casefolded.add(folded)
-    if list(name for name in members if name == MANIFEST_PATH) != [MANIFEST_PATH]:
+    if MANIFEST_PATH not in members:
         raise ValueError("package manifest missing")
     return members
 
@@ -128,21 +145,33 @@ def _validate_manifest(manifest: Any) -> list[dict[str, Any]]:
     seen: set[str] = set()
     casefolded: set[str] = set()
     for entry in entries:
-        if not isinstance(entry, dict) or set(entry) != {"path", "size", "media_type", "sha256"}:
+        if not isinstance(entry, dict) or set(entry) != {
+            "path",
+            "size",
+            "media_type",
+            "sha256",
+        }:
             raise ValueError("invalid package manifest entry")
         path = _normalize_path(entry["path"])
         folded = path.casefold()
         if path == MANIFEST_PATH or path in seen or folded in casefolded:
             raise ValueError("duplicate package manifest entry")
         size = entry["size"]
-        if isinstance(size, bool) or not isinstance(size, int) or size < 0 or size > MAX_MEMBER_BYTES:
+        if (
+            isinstance(size, bool)
+            or not isinstance(size, int)
+            or size < 0
+            or size > MAX_MEMBER_BYTES
+        ):
             raise ValueError("invalid package manifest size")
         media_type = entry["media_type"]
         expected_media_type = MEDIA_TYPES.get(PurePosixPath(path).suffix.lower())
         if media_type not in ALLOWED_MEDIA_TYPES or media_type != expected_media_type:
             raise ValueError("unsupported package media type")
         digest = entry["sha256"]
-        if not isinstance(digest, str) or not re.fullmatch(r"sha256:[0-9a-f]{64}", digest):
+        if not isinstance(digest, str) or not re.fullmatch(
+            r"sha256:[0-9a-f]{64}", digest
+        ):
             raise ValueError("invalid package manifest hash")
         validated.append(entry)
         seen.add(path)
@@ -155,18 +184,23 @@ def verify_package(package: Path) -> list[ValidatedEntry]:
         with zipfile.ZipFile(package) as zf:
             members = _validate_archive_members(zf)
             manifest_info = members[MANIFEST_PATH]
-            manifest = _strict_json(zf.read(manifest_info))
+            manifest_bytes = _read_bounded(zf, manifest_info)
+            manifest = _strict_json(manifest_bytes)
             entries = _validate_manifest(manifest)
             archive_paths = set(members) - {MANIFEST_PATH}
             manifest_paths = {entry["path"] for entry in entries}
             if archive_paths != manifest_paths:
                 raise ValueError("incomplete package manifest")
             validated: list[ValidatedEntry] = []
+            actual_total = len(manifest_bytes)
             for entry in entries:
                 info = members[entry["path"]]
                 if info.file_size != entry["size"]:
                     raise ValueError("package member size mismatch")
-                data = zf.read(info)
+                data = _read_bounded(zf, info)
+                actual_total += len(data)
+                if actual_total > MAX_TOTAL_BYTES:
+                    raise ValueError("oversized package")
                 if len(data) != entry["size"]:
                     raise ValueError("package member size mismatch")
                 digest = "sha256:" + hashlib.sha256(data).hexdigest()
@@ -186,9 +220,16 @@ def verify_package(package: Path) -> list[ValidatedEntry]:
 
 
 def extract_verified(entries: list[ValidatedEntry], target: Path) -> None:
-    target = target.resolve()
+    target = target.absolute()
+    cursor = target
+    while True:
+        if cursor.is_symlink():
+            raise ValueError("unsafe output path")
+        if cursor.parent == cursor:
+            break
+        cursor = cursor.parent
     if target.exists():
-        if target.is_symlink() or not target.is_dir() or any(target.iterdir()):
+        if not target.is_dir() or any(target.iterdir()):
             raise ValueError("output directory must be absent or empty")
     else:
         target.mkdir(parents=True)
