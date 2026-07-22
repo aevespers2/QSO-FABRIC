@@ -170,6 +170,22 @@ class PackageBoundaryTests(unittest.TestCase):
             )
             self.assertEqual((output / RESOURCE).read_bytes(), DATA)
 
+    def test_unpack_rejects_symlink_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "valid.qsp"
+            write_case(package, "none")
+            real_output = root / "real-output"
+            real_output.mkdir()
+            linked_output = root / "linked-output"
+            try:
+                linked_output.symlink_to(real_output, target_is_directory=True)
+            except OSError:
+                self.skipTest("symlinks unavailable")
+            with self.assertRaisesRegex(ValueError, "unsafe output path"):
+                UNPACK.main(["qso_unpack", str(package), str(linked_output)])
+            self.assertFalse((real_output / RESOURCE).exists())
+
     def test_pack_rejects_symlink_input(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
