@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"qso://schemas/state/0.1.0","allOf":[{"$ref":"../common/qso-envelope.schema.json"}],"properties":{"payload":{"type":"object","required":["revision","variables"],"properties":{"revision":{"type":"integer","minimum":0},"variables":{"type":"object"},"context":{"type":"object"}},"additionalProperties":false}}}

@@ -1,0 +1,1 @@
+{"profile":"QSO-AUTONOMOUS-AGENT-0.1","required_formats":["QSO-CORE","QSO-IDENTITY","QSO-SELF","QSO-STATE","QSO-COGNITION","QSO-OBJECTIVE","QSO-ETHICS","QSO-GOVERNANCE","QSO-CAPABILITY","QSO-TRACE","QSO-PROVENANCE"],"requirements":{"bounded_capabilities":true,"auditable_actions":true,"governance_precedence":true,"explicit_mutation_policy":true}}

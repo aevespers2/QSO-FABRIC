@@ -1,0 +1,20 @@
+{
+  "format": "QSO-HOSTILE-PACKAGE-CORPUS",
+  "version": "1.0.0",
+  "cases": [
+    {"id": "valid-minimal", "mutation": "none", "accepted": true},
+    {"id": "parent-traversal", "mutation": "parent_path", "error": "unsafe package path"},
+    {"id": "absolute-path", "mutation": "absolute_path", "error": "unsafe package path"},
+    {"id": "backslash-path", "mutation": "backslash_path", "error": "unsafe package path"},
+    {"id": "duplicate-entry", "mutation": "duplicate_entry", "error": "duplicate package entry"},
+    {"id": "casefold-collision", "mutation": "casefold_collision", "error": "duplicate package entry"},
+    {"id": "symlink-entry", "mutation": "symlink_entry", "error": "unsupported package member type"},
+    {"id": "missing-manifest", "mutation": "missing_manifest", "error": "package manifest missing"},
+    {"id": "duplicate-manifest-key", "mutation": "duplicate_manifest_key", "error": "duplicate JSON key"},
+    {"id": "mismatched-hash", "mutation": "hash_mismatch", "error": "package member hash mismatch"},
+    {"id": "mismatched-size", "mutation": "size_mismatch", "error": "package member size mismatch"},
+    {"id": "incomplete-manifest", "mutation": "incomplete_manifest", "error": "incomplete package manifest"},
+    {"id": "unsupported-media-type", "mutation": "unsupported_media_type", "error": "unsupported package media type"},
+    {"id": "oversized-member", "mutation": "oversized_member", "error": "oversized package member"}
+  ]
+}

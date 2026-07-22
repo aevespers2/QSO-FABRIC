@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"qso://schemas/evidence/0.1.0","allOf":[{"$ref":"../common/qso-envelope.schema.json"}],"properties":{"payload":{"type":"object","required":["claims","sources"],"properties":{"claims":{"type":"array"},"sources":{"type":"array"},"confidence":{"type":"object"}},"additionalProperties":false}}}

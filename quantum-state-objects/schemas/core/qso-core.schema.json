@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qso://schemas/core/0.1.0",
+  "title": "QSO Core Composition Root",
+  "allOf": [{"$ref": "../common/qso-envelope.schema.json"}],
+  "properties": {
+    "payload": {
+      "type": "object",
+      "required": ["manifest", "identity", "components"],
+      "properties": {
+        "manifest": {"$ref": "#/$defs/reference"},
+        "identity": {"$ref": "#/$defs/reference"},
+        "components": {"type": "array", "items": {"$ref": "#/$defs/reference"}, "uniqueItems": true},
+        "entrypoints": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "required": ["object_id", "format", "content_hash", "required"],
+      "properties": {
+        "object_id": {"type": "string"},
+        "format": {"type": "string", "pattern": "^QSO-"},
+        "content_hash": {"type": "string"},
+        "required": {"type": "boolean"},
+        "uri": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

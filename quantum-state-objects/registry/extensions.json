@@ -1,0 +1,1 @@
+{"registry_version":"0.1.0","generic":{".qso":"QSO-CORE",".qsp":"QSO-PACKAGE",".qsoz":"QSO-COMPRESSED"},"authoring":{".qso.json":"QSO JSON authoring representation"},"rule":"Extensions are hints; the signed envelope format field is authoritative."}
