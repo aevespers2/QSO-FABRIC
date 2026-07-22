@@ -1,0 +1,30 @@
+{
+  "queue_version": "0.1.0",
+  "policy": "classify-before-convert",
+  "items": [
+    {
+      "class": "QMEM and memory assets",
+      "target_candidates": ["QSO-MEMORY", "QSO-INDEX", "QSO-GRAPH"],
+      "status": "inventory-required",
+      "reason": "Memory payload semantics and mutation compartments must be identified before conversion."
+    },
+    {
+      "class": "genome assets",
+      "target_candidates": ["QSO-GENOME", "QSO-EVOLUTION", "QSO-MUTATION"],
+      "status": "inventory-required",
+      "reason": "Heritable traits must be separated from lineage and mutation events."
+    },
+    {
+      "class": "runtime state and configuration",
+      "target_candidates": ["QSO-STATE", "QSO-MANIFEST", "QSO-LOCK", "QSO-POLICY"],
+      "status": "inventory-required",
+      "reason": "Runtime state must not be confused with immutable configuration or governance policy."
+    },
+    {
+      "class": "traces, reports, and evidence",
+      "target_candidates": ["QSO-TRACE", "QSO-REPORT", "QSO-EVIDENCE", "QSO-PROVENANCE"],
+      "status": "inventory-required",
+      "reason": "Audit events, analytical conclusions, source evidence, and lineage require distinct envelopes."
+    }
+  ]
+}
