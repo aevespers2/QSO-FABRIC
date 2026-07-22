@@ -49,11 +49,17 @@ jobs:
           mkdir -p reports/four-qso
           python -m pytest -q --junitxml=reports/four-qso/pytest.xml | tee reports/four-qso/pytest.log
 
-      - name: Validate QSO authoring example
+      - name: Validate every QSO authoring example
         shell: bash
         run: |
           set -euo pipefail
-          python quantum-state-objects/tools/qso_validate.py quantum-state-objects/examples/minimal/minimal.qso.json | tee reports/four-qso/qso-format-validation.log
+          : > reports/four-qso/qso-format-validation.log
+          while IFS= read -r example; do
+            printf 'validating %s\n' "$example" | tee -a reports/four-qso/qso-format-validation.log
+            python quantum-state-objects/tools/qso_validate.py "$example" \
+              | tee -a reports/four-qso/qso-format-validation.log
+          done < <(find quantum-state-objects/examples -type f -name '*.json' -print | LC_ALL=C sort)
+          test -s reports/four-qso/qso-format-validation.log
 
       - name: Run bounded four-QSO smoke
         shell: bash
@@ -88,7 +94,9 @@ jobs:
           if [ -f artifacts/four_qso_report.json ]; then
             cp artifacts/four_qso_report.json reports/four-qso/
           fi
-          sha256sum reports/four-qso/* > reports/four-qso/SHA256SUMS
+          find reports/four-qso -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | LC_ALL=C sort -z \
+            | xargs -0 -r sha256sum > reports/four-qso/SHA256SUMS
 
       - name: Upload exact-head evidence
         if: always()
