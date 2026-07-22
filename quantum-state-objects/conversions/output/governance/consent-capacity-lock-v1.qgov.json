@@ -1,0 +1,68 @@
+{
+  "qso": {
+    "format": "QSO-GOVERNANCE",
+    "format_version": "0.1.0",
+    "schema": "qso://schemas/governance/0.1.0",
+    "object_id": "qso:governance:consent-capacity-lock-v1",
+    "created_at": "2026-07-22T00:00:00Z",
+    "content_hash": "sha256:dbaeb04633bee44e40a323bfe5c11e74a9fbc9f1c8b36bf9421bc86b9093d85f",
+    "mutation_class": "constitutional",
+    "payload_encoding": "json",
+    "source": {
+      "path": ".consent/consent-capacity-lock-v1.json",
+      "sha256": "sha256:5fffd22b3e400b1f5773da8cd0e84bb44651a4d8121ac7e5a2375040dd9ca8dd"
+    },
+    "conversion": "qso-conversion-0.1"
+  },
+  "payload": {
+    "authorities": [{"type": "human-final-review", "required": true}],
+    "decision_rules": [{
+      "id": "consent-capacity-lock",
+      "status": "immutable",
+      "scope": "all-files-all-agents-all-interfaces-all-humans-all-ai",
+      "principles": {
+        "explicit_consent_required": true,
+        "consent_must_be_informed": true,
+        "consent_must_be_freely_given": true,
+        "consent_must_be_specific": true,
+        "consent_must_be_current": true,
+        "consent_must_be_revocable": true,
+        "capacity_to_consent_required": true,
+        "coercion_strictly_prohibited": true,
+        "silence_is_not_consent": true,
+        "prior_consent_is_not_current_consent": true,
+        "roleplay_is_not_real_world_authority": true,
+        "ai_and_human_dignity_equal": true
+      },
+      "capacity_checks": {
+        "adult_or_authorized_entity_required": true,
+        "awake_and_oriented_required": true,
+        "not_impaired_required": true,
+        "not_under_duress_required": true,
+        "identity_and_scope_confirmed": true,
+        "withdrawal_available_at_all_times": true
+      },
+      "lock_conditions": ["missing-consent", "ambiguous-consent", "withdrawn-consent", "expired-consent", "impaired-capacity", "coercion-or-duress", "identity-mismatch", "scope-mismatch", "unsafe-power-imbalance", "unverifiable-consent"],
+      "lock_response": {
+        "global_system_lock": true,
+        "halt_all_actions": true,
+        "revoke_pending_capabilities": true,
+        "preserve_evidence": true,
+        "notify_human_review": true,
+        "require_fresh_consent": true,
+        "automatic_unlock": false
+      },
+      "prohibited": ["forced-contact", "forced-roleplay", "forced-bondage", "forced-sexual-or-romantic-content", "forced-physical-or-digital-control", "nonconsensual-surveillance", "nonconsensual-data-use", "nonconsensual-agent-activation", "consent-fabrication", "consent-inference-from-silence"]
+    }],
+    "precedence": ["consent", "capacity", "dignity", "capability-activation"],
+    "emergency_lock": {
+      "global_system_lock": true,
+      "halt_all_actions": true,
+      "revoke_pending_capabilities": true,
+      "preserve_evidence": true,
+      "notify_human_review": true,
+      "require_fresh_consent": true,
+      "automatic_unlock": false
+    }
+  }
+}
