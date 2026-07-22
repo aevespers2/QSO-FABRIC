@@ -1,0 +1,20 @@
+{
+  "registry_version": "0.1.0",
+  "source_policy": "preserve",
+  "conversions": [{
+    "conversion_id": "consent-policy-to-qso-governance-v1",
+    "status": "converted",
+    "source": {
+      "path": ".consent/consent-capacity-lock-v1.json",
+      "content_hash": "sha256:5fffd22b3e400b1f5773da8cd0e84bb44651a4d8121ac7e5a2375040dd9ca8dd"
+    },
+    "target": {
+      "path": "quantum-state-objects/conversions/output/governance/consent-capacity-lock-v1.qgov.json",
+      "format": "QSO-GOVERNANCE",
+      "object_id": "qso:governance:consent-capacity-lock-v1",
+      "content_hash": "sha256:dbaeb04633bee44e40a323bfe5c11e74a9fbc9f1c8b36bf9421bc86b9093d85f"
+    },
+    "provenance": "quantum-state-objects/conversions/provenance/consent-capacity-lock-v1.qprov.json",
+    "reversible": true
+  }]
+}
