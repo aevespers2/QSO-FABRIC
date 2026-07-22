@@ -29,6 +29,16 @@ MUTATION = {
 PAYLOAD_ENCODINGS = {"json", "cbor", "binary", "reference"}
 
 
+def strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject duplicate JSON object keys instead of silently keeping the last value."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
 def canonical_json_bytes(value: object) -> bytes:
     """Return the QSO JSON authoring-profile hash preimage.
 
@@ -275,6 +285,7 @@ def main(argv: list[str]) -> int:
     try:
         value: Any = json.loads(
             path.read_text(encoding="utf-8"),
+            object_pairs_hook=strict_object,
             parse_constant=lambda constant: (_ for _ in ()).throw(
                 ValueError(f"non-finite JSON value: {constant}")
             ),
