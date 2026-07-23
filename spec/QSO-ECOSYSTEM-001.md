@@ -17,14 +17,18 @@ This specification defines the minimum evidence required for a repository to par
 
 A repository MUST NOT claim a level unless every requirement at that level and below is satisfied.
 
-## Required repository artifacts
+## Level-gated repository artifacts
 
-1. `qso.manifest.json`
-2. `README.md` with deterministic run instructions
-3. `SECURITY.md` or an explicit security-boundary section
-4. `tests/` containing executable checks
-5. `artifacts/conformance/` for generated evidence
-6. A CI workflow invoking the ecosystem validator
+The following artifacts are cumulative rather than universally required at L0:
+
+1. L0 requires `qso.manifest.json`.
+2. L1 additionally requires a non-empty `README.md` with deterministic instructions and a CI workflow invoking the ecosystem validator.
+3. L2 additionally requires executable tests and the declared conformance-evidence directory.
+4. L3 additionally requires versioned cross-component contract fixtures and compatibility evidence.
+5. L4 additionally requires `SECURITY.md` or an explicitly governed security-boundary document, failure injection, recovery evidence, and bounded-resource enforcement.
+6. L5 additionally requires governance, migration, audit, human-override, and release-attestation evidence.
+
+A file's presence is not sufficient evidence for the level associated with it. The artifact must be valid, current, and bound to the exact source under review.
 
 ## Core invariants
 
@@ -49,6 +53,23 @@ Interfaces MUST identify:
 - failure semantics and retry limits;
 - provenance fields and integrity hashes;
 - deprecation and migration windows.
+
+## Validation boundary
+
+The reference validator MUST:
+
+- parse strict UTF-8 JSON;
+- reject duplicate object keys and non-finite numbers;
+- reject unknown and missing fields at every validated object boundary;
+- reject Boolean values where integer values are required;
+- validate capability and interface identity uniqueness;
+- bind its accepted top-level field set to the checked-in JSON Schema;
+- reject unsafe repository-relative evidence paths; and
+- emit a structured failure rather than silently accepting malformed input.
+
+The validation workflow MUST use read-only permissions, immutable Action revisions, disabled persisted checkout credentials, exact submitted-head checkout and assertion, hostile regression tests, deterministic source hashes, retained evidence, and a final fail-closed gate.
+
+A successful validation result proves only that the exact manifest, schema, validator, tests, specification, and workflow passed the declared checks. It does not admit the repository to the ecosystem, grant a capability, authorize consequential execution, approve governance, publish a release, or deploy software.
 
 ## Evidence bundle
 
