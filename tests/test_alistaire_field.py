@@ -1,21 +1,25 @@
 from __future__ import annotations
 
+import math
 import unittest
 
 from qso_runtime.alistaire_field import (
     AlistaireField,
+    AlistaireLimits,
     ConstitutionalViolation,
+    ConstitutionalWeights,
     Possibility,
 )
 
 
 class AlistaireFieldTests(unittest.TestCase):
-    def test_observation_is_bounded_and_hashed(self) -> None:
+    def test_observation_is_bounded_and_hash_chained(self) -> None:
         field = AlistaireField()
         first_hash = field.state.state_hash
         memory = field.observe("A bounded observation", semantic_tags=("qso", "field"))
         self.assertTrue(memory.memory_id.startswith("mem-"))
         self.assertNotEqual(first_hash, field.state.state_hash)
+        self.assertEqual(first_hash, field.state.previous_hash)
         self.assertEqual(1, len(field.state.memories))
 
     def test_memory_affinity_rewards_shared_structure(self) -> None:
@@ -29,6 +33,21 @@ class AlistaireFieldTests(unittest.TestCase):
         field = AlistaireField()
         with self.assertRaises(ConstitutionalViolation):
             field.adapt_laws({"constitutional_truth": -1.0})
+
+    def test_constitutional_weights_cannot_be_replaced(self) -> None:
+        with self.assertRaises(ConstitutionalViolation):
+            AlistaireField(weights=ConstitutionalWeights(truth=0.0))
+
+    def test_coercion_ceiling_can_only_be_tightened(self) -> None:
+        stricter = AlistaireField(limits=AlistaireLimits(coercion_ceiling=0.01))
+        self.assertEqual(0.01, stricter.limits.coercion_ceiling)
+        with self.assertRaises(ConstitutionalViolation):
+            AlistaireField(limits=AlistaireLimits(coercion_ceiling=0.5))
+
+    def test_unknown_adaptive_law_is_rejected(self) -> None:
+        field = AlistaireField()
+        with self.assertRaises(ConstitutionalViolation):
+            field.adapt_laws({"coercion_discount": 1.0})
 
     def test_coercive_action_is_rejected(self) -> None:
         field = AlistaireField()
@@ -56,6 +75,41 @@ class AlistaireFieldTests(unittest.TestCase):
         self.assertEqual("support", decision.selected_action_id)
         self.assertEqual("coercion ceiling exceeded", decision.rejected["control"])
 
+    def test_out_of_range_scoring_input_is_rejected(self) -> None:
+        field = AlistaireField()
+        for possibility in (
+            Possibility(action_id="negative-harm", description="invalid", harm=-1.0),
+            Possibility(action_id="inflated-truth", description="invalid", truth=2.0),
+            Possibility(action_id="nan-risk", description="invalid", risk=math.nan),
+        ):
+            with self.subTest(possibility=possibility.action_id):
+                with self.assertRaises(ValueError):
+                    field.set_possibilities([possibility])
+
+    def test_non_json_metadata_is_rejected(self) -> None:
+        field = AlistaireField()
+        with self.assertRaises(ValueError):
+            field.set_possibilities(
+                [
+                    Possibility(
+                        action_id="bad-metadata",
+                        description="invalid",
+                        metadata={"opaque": object()},
+                    )
+                ]
+            )
+
+    def test_possibility_overflow_fails_instead_of_truncating(self) -> None:
+        limits = AlistaireLimits(max_possibilities=2)
+        field = AlistaireField(limits=limits)
+        possibilities = [
+            Possibility(action_id=f"action-{index}", description="bounded")
+            for index in range(3)
+        ]
+        with self.assertRaises(ValueError):
+            field.set_possibilities(possibilities)
+        self.assertEqual([], field.state.possibilities)
+
     def test_decision_is_deterministic_under_ties(self) -> None:
         field = AlistaireField()
         field.set_possibilities(
@@ -77,6 +131,13 @@ class AlistaireFieldTests(unittest.TestCase):
         )
         self.assertGreater(field.contradiction_energy(), 0.0)
         self.assertEqual(1, len(field.state.contradictions))
+
+    def test_non_finite_intent_and_law_updates_are_rejected(self) -> None:
+        field = AlistaireField()
+        with self.assertRaises(ValueError):
+            field.update_intent({"repair": math.inf})
+        with self.assertRaises(ValueError):
+            field.adapt_laws({"repair_preference": math.nan})
 
 
 if __name__ == "__main__":
