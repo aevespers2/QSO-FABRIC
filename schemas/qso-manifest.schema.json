@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qso.dev/schemas/qso-manifest.schema.json",
+  "title": "QSO Ecosystem Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "component", "version", "purpose", "conformance", "runtime_bounds", "capabilities", "interfaces", "governance"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "component": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?$"},
+    "purpose": {"type": "string", "minLength": 20},
+    "conformance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claimed_level"],
+      "properties": {
+        "claimed_level": {"type": "integer", "minimum": 0, "maximum": 5},
+        "evidence_path": {"type": "string", "default": "artifacts/conformance"}
+      }
+    },
+    "runtime_bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_seconds", "max_rounds", "max_messages", "network_default"],
+      "properties": {
+        "max_seconds": {"type": "integer", "minimum": 1},
+        "max_rounds": {"type": "integer", "minimum": 1},
+        "max_messages": {"type": "integer", "minimum": 1},
+        "max_memory_mb": {"type": "integer", "minimum": 1},
+        "network_default": {"enum": ["deny", "allow-declared"]}
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "authority", "default"],
+        "properties": {
+          "name": {"type": "string"},
+          "authority": {"enum": ["observe", "propose", "execute"]},
+          "default": {"enum": ["deny", "allow"]},
+          "constraints": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "interfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role", "protocol", "schema_version"],
+        "properties": {
+          "name": {"type": "string"},
+          "role": {"enum": ["producer", "consumer", "bidirectional"]},
+          "protocol": {"type": "string"},
+          "schema_version": {"type": "string"},
+          "idempotent": {"type": "boolean"},
+          "retry_limit": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review_component", "human_override", "audit_log"],
+      "properties": {
+        "review_component": {"const": "Jacob Redmond"},
+        "deprecated_aliases": {"type": "array", "items": {"type": "string"}},
+        "human_override": {"type": "boolean", "const": true},
+        "audit_log": {"type": "boolean", "const": true}
+      }
+    }
+  }
+}
