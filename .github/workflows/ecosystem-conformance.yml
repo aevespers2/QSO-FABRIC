@@ -35,6 +35,7 @@ jobs:
     timeout-minutes: 10
     env:
       EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Check out exact submitted source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -80,14 +81,22 @@ jobs:
           echo "status=$status" >> "$GITHUB_OUTPUT"
           exit 0
 
-      - name: Compile validator
+      - name: Compile validator outside the source tree
         id: compile
         shell: bash
         run: |
           set +e
           evidence="$RUNNER_TEMP/ecosystem-conformance-evidence"
-          python -m py_compile tools/validate_ecosystem.py \
-            >"$evidence/compile.log" 2>&1
+          python - <<'PY' >"$evidence/compile.log" 2>&1
+          import os
+          import py_compile
+
+          py_compile.compile(
+              "tools/validate_ecosystem.py",
+              cfile=os.path.join(os.environ["RUNNER_TEMP"], "validate_ecosystem.pyc"),
+              doraise=True,
+          )
+          PY
           status=$?
           cat "$evidence/compile.log"
           echo "status=$status" >> "$GITHUB_OUTPUT"
