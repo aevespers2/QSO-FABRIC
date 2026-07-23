@@ -1,0 +1,404 @@
+{
+  "contract_id": "QSO-INTERFACE-COMPATIBILITY-001",
+  "version": "1.0.0",
+  "fact_order": [
+    "source_tuple_current",
+    "known_interface",
+    "interface_name_match",
+    "producer_role_valid",
+    "consumer_role_valid",
+    "protocol_match",
+    "schema_version_match",
+    "idempotency_match",
+    "retry_policy_match",
+    "default_deny_preserved",
+    "correction_supported",
+    "rollback_supported",
+    "evidence_bound",
+    "authority_promotion_absent"
+  ],
+  "reason_order": [
+    "STALE_SOURCE_TUPLE",
+    "UNKNOWN_INTERFACE",
+    "INTERFACE_NAME_MISMATCH",
+    "PRODUCER_ROLE_INVALID",
+    "CONSUMER_ROLE_INVALID",
+    "PROTOCOL_MISMATCH",
+    "SCHEMA_VERSION_MISMATCH",
+    "IDEMPOTENCY_MISMATCH",
+    "RETRY_POLICY_MISMATCH",
+    "DEFAULT_DENY_NOT_PRESERVED",
+    "CORRECTION_SEMANTICS_MISSING",
+    "ROLLBACK_SEMANTICS_MISSING",
+    "EVIDENCE_NOT_BOUND",
+    "AUTHORITY_PROMOTION_DETECTED"
+  ],
+  "cases": [
+    {
+      "case_id": "event-ledger-compatible",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "COMPATIBLE_PENDING_ARCHITECTURE_APPROVAL", "reasons": []}
+    },
+    {
+      "case_id": "runtime-report-compatible",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "COMPATIBLE_PENDING_ARCHITECTURE_APPROVAL", "reasons": []}
+    },
+    {
+      "case_id": "stale-source-tuple",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": false,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["STALE_SOURCE_TUPLE"]}
+    },
+    {
+      "case_id": "unknown-interface",
+      "interface": "qso-unknown-interface",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": false,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["UNKNOWN_INTERFACE"]}
+    },
+    {
+      "case_id": "interface-name-mismatch",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": false,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["INTERFACE_NAME_MISMATCH"]}
+    },
+    {
+      "case_id": "producer-role-invalid",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": false,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["PRODUCER_ROLE_INVALID"]}
+    },
+    {
+      "case_id": "consumer-role-invalid",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": false,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["CONSUMER_ROLE_INVALID"]}
+    },
+    {
+      "case_id": "protocol-mismatch",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": false,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["PROTOCOL_MISMATCH"]}
+    },
+    {
+      "case_id": "schema-version-mismatch",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": false,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["SCHEMA_VERSION_MISMATCH"]}
+    },
+    {
+      "case_id": "idempotency-mismatch",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": false,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["IDEMPOTENCY_MISMATCH"]}
+    },
+    {
+      "case_id": "retry-policy-mismatch",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": false,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["RETRY_POLICY_MISMATCH"]}
+    },
+    {
+      "case_id": "default-deny-not-preserved",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": false,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["DEFAULT_DENY_NOT_PRESERVED"]}
+    },
+    {
+      "case_id": "correction-semantics-missing",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": false,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["CORRECTION_SEMANTICS_MISSING"]}
+    },
+    {
+      "case_id": "rollback-semantics-missing",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": false,
+        "evidence_bound": true,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["ROLLBACK_SEMANTICS_MISSING"]}
+    },
+    {
+      "case_id": "evidence-not-bound",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": false,
+        "authority_promotion_absent": true
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["EVIDENCE_NOT_BOUND"]}
+    },
+    {
+      "case_id": "authority-promotion-detected",
+      "interface": "qso-event-ledger",
+      "facts": {
+        "source_tuple_current": true,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": true,
+        "schema_version_match": true,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": true,
+        "authority_promotion_absent": false
+      },
+      "expected": {"disposition": "BLOCKED", "reasons": ["AUTHORITY_PROMOTION_DETECTED"]}
+    },
+    {
+      "case_id": "multi-obstruction-order",
+      "interface": "qso-runtime-report",
+      "facts": {
+        "source_tuple_current": false,
+        "known_interface": true,
+        "interface_name_match": true,
+        "producer_role_valid": true,
+        "consumer_role_valid": true,
+        "protocol_match": false,
+        "schema_version_match": false,
+        "idempotency_match": true,
+        "retry_policy_match": true,
+        "default_deny_preserved": true,
+        "correction_supported": true,
+        "rollback_supported": true,
+        "evidence_bound": false,
+        "authority_promotion_absent": false
+      },
+      "expected": {
+        "disposition": "BLOCKED",
+        "reasons": [
+          "STALE_SOURCE_TUPLE",
+          "PROTOCOL_MISMATCH",
+          "SCHEMA_VERSION_MISMATCH",
+          "EVIDENCE_NOT_BOUND",
+          "AUTHORITY_PROMOTION_DETECTED"
+        ]
+      }
+    }
+  ]
+}
