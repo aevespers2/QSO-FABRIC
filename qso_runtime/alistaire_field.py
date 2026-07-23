@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from dataclasses import asdict, dataclass, field
 from typing import Any, Iterable, Mapping
 
@@ -12,6 +13,15 @@ CONSTITUTIONAL_VALUES = (
     "autonomy",
     "repair",
     "beauty",
+)
+
+ADAPTIVE_LAWS = frozenset(
+    {
+        "evidence_weight",
+        "memory_weight",
+        "contradiction_sensitivity",
+        "repair_preference",
+    }
 )
 
 
@@ -34,6 +44,10 @@ class AlistaireLimits:
     max_contradictions: int = 64
     max_text_chars: int = 800
     coercion_ceiling: float = 0.05
+
+
+DEFAULT_CONSTITUTIONAL_WEIGHTS = ConstitutionalWeights()
+DEFAULT_LIMITS = AlistaireLimits()
 
 
 @dataclass(frozen=True)
@@ -84,12 +98,14 @@ class AlistaireState:
     state_vector: dict[str, float] = field(default_factory=dict)
     memories: list[MemoryNode] = field(default_factory=list)
     intent: dict[str, float] = field(default_factory=dict)
-    laws: dict[str, float] = field(default_factory=lambda: {
-        "evidence_weight": 1.0,
-        "memory_weight": 0.7,
-        "contradiction_sensitivity": 0.9,
-        "repair_preference": 0.8,
-    })
+    laws: dict[str, float] = field(
+        default_factory=lambda: {
+            "evidence_weight": 1.0,
+            "memory_weight": 0.7,
+            "contradiction_sensitivity": 0.9,
+            "repair_preference": 0.8,
+        }
+    )
     contradictions: list[Contradiction] = field(default_factory=list)
     possibilities: list[Possibility] = field(default_factory=list)
     step: int = 0
@@ -110,20 +126,61 @@ class ConstitutionalViolation(ValueError):
     pass
 
 
-def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
-    return max(low, min(high, float(value)))
+def _finite(value: float, name: str) -> float:
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise ValueError(f"{name} must be finite")
+    return numeric
+
+
+def _unit(value: float, name: str, *, low: float = 0.0, high: float = 1.0) -> float:
+    numeric = _finite(value, name)
+    if not low <= numeric <= high:
+        raise ValueError(f"{name} must be between {low} and {high}")
+    return numeric
+
+
+def _canonical_json(payload: Any) -> str:
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
 
 
 def _stable_id(prefix: str, payload: Mapping[str, Any]) -> str:
-    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode("utf-8")
+    encoded = _canonical_json(payload).encode("utf-8")
     return f"{prefix}-{hashlib.sha256(encoded).hexdigest()[:16]}"
+
+
+def _bounded_text(value: str, name: str, max_chars: int) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a string")
+    clean = value.strip()
+    if not clean:
+        raise ValueError(f"{name} must not be empty")
+    if len(clean) > max_chars:
+        raise ValueError(f"{name} exceeds the {max_chars}-character limit")
+    return clean
+
+
+def _bounded_string_tuple(values: Iterable[str], name: str, *, max_items: int = 64) -> tuple[str, ...]:
+    materialized = tuple(values)
+    if len(materialized) > max_items:
+        raise ValueError(f"{name} exceeds the {max_items}-item limit")
+    if any(not isinstance(value, str) or not value.strip() for value in materialized):
+        raise ValueError(f"{name} must contain non-empty strings")
+    return tuple(sorted(set(value.strip() for value in materialized)))
 
 
 class AlistaireField:
     """Bounded constitutional field for relational QSO cognition.
 
     The field is deterministic, has no external authority, and emits proposals only.
-    It keeps adaptive laws separate from hard constitutional constraints.
+    It keeps adaptive laws separate from hard constitutional constraints and rejects
+    malformed or non-finite scoring input rather than silently normalizing it.
     """
 
     def __init__(
@@ -133,10 +190,55 @@ class AlistaireField:
         limits: AlistaireLimits | None = None,
         state: AlistaireState | None = None,
     ) -> None:
-        self.weights = weights or ConstitutionalWeights()
-        self.limits = limits or AlistaireLimits()
+        selected_weights = weights or DEFAULT_CONSTITUTIONAL_WEIGHTS
+        if selected_weights != DEFAULT_CONSTITUTIONAL_WEIGHTS:
+            raise ConstitutionalViolation("constitutional weights are immutable")
+
+        selected_limits = limits or DEFAULT_LIMITS
+        self._validate_limits(selected_limits)
+
+        self.weights = selected_weights
+        self.limits = selected_limits
         self.state = state or AlistaireState()
+        self._validate_state()
         self._seal_state()
+
+    @staticmethod
+    def _validate_limits(limits: AlistaireLimits) -> None:
+        for name in ("max_memories", "max_possibilities", "max_contradictions", "max_text_chars"):
+            value = getattr(limits, name)
+            maximum = getattr(DEFAULT_LIMITS, name)
+            if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= maximum:
+                raise ValueError(f"{name} must be an integer between 1 and {maximum}")
+        ceiling = _unit(limits.coercion_ceiling, "coercion_ceiling")
+        if ceiling > DEFAULT_LIMITS.coercion_ceiling:
+            raise ConstitutionalViolation("coercion_ceiling may be tightened but not relaxed")
+
+    def _validate_state(self) -> None:
+        if isinstance(self.state.step, bool) or not isinstance(self.state.step, int) or self.state.step < 0:
+            raise ValueError("state.step must be a non-negative integer")
+        if len(self.state.memories) > self.limits.max_memories:
+            raise ValueError("state contains too many memories")
+        if len(self.state.contradictions) > self.limits.max_contradictions:
+            raise ValueError("state contains too many contradictions")
+        if len(self.state.possibilities) > self.limits.max_possibilities:
+            raise ValueError("state contains too many possibilities")
+        if set(self.state.laws) != ADAPTIVE_LAWS:
+            raise ConstitutionalViolation("state must contain exactly the approved adaptive laws")
+        for name, value in self.state.laws.items():
+            numeric = _finite(value, f"law {name}")
+            if not 0.0 <= numeric <= 2.0:
+                raise ValueError(f"law {name} must be between 0 and 2")
+        for name, value in self.state.intent.items():
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError("intent keys must be non-empty strings")
+            _finite(value, f"intent {name}")
+        for name, value in self.state.state_vector.items():
+            if not isinstance(name, str) or not name.strip():
+                raise ValueError("state-vector keys must be non-empty strings")
+            _finite(value, f"state-vector {name}")
+        for possibility in self.state.possibilities:
+            self._validate_possibility(possibility)
 
     def observe(
         self,
@@ -147,22 +249,24 @@ class AlistaireField:
         causal_parents: Iterable[str] = (),
         relational_relevance: float = 0.0,
     ) -> MemoryNode:
-        clean = text.strip()[: self.limits.max_text_chars]
-        if not clean:
-            raise ValueError("memory text must not be empty")
+        clean = _bounded_text(text, "memory text", self.limits.max_text_chars)
+        tags = _bounded_string_tuple(semantic_tags, "semantic_tags")
+        parents = _bounded_string_tuple(causal_parents, "causal_parents")
+        emotional = _unit(emotional_weight, "emotional_weight", low=-1.0, high=1.0)
+        relational = _unit(relational_relevance, "relational_relevance")
         payload = {
             "text": clean,
-            "semantic_tags": sorted(set(semantic_tags)),
-            "causal_parents": sorted(set(causal_parents)),
+            "semantic_tags": tags,
+            "causal_parents": parents,
             "step": self.state.step,
         }
         node = MemoryNode(
             memory_id=_stable_id("mem", payload),
             text=clean,
-            semantic_tags=tuple(payload["semantic_tags"]),
-            emotional_weight=_clamp(emotional_weight, -1.0, 1.0),
-            causal_parents=tuple(payload["causal_parents"]),
-            relational_relevance=_clamp(relational_relevance),
+            semantic_tags=tags,
+            emotional_weight=emotional,
+            causal_parents=parents,
+            relational_relevance=relational,
         )
         self.state.memories.append(node)
         self.state.memories = self.state.memories[-self.limits.max_memories :]
@@ -177,7 +281,7 @@ class AlistaireField:
         emotional = 1.0 - min(1.0, abs(left.emotional_weight - right.emotional_weight) / 2.0)
         causal = 1.0 if left.memory_id in right.causal_parents or right.memory_id in left.causal_parents else 0.0
         relational = 1.0 - abs(left.relational_relevance - right.relational_relevance)
-        return _clamp(0.4 * semantic + 0.2 * emotional + 0.2 * causal + 0.2 * relational)
+        return max(0.0, min(1.0, 0.4 * semantic + 0.2 * emotional + 0.2 * causal + 0.2 * relational))
 
     def register_contradiction(
         self,
@@ -189,15 +293,17 @@ class AlistaireField:
         distortion_risk: float = 0.0,
         suppression_risk: float = 0.0,
     ) -> Contradiction:
-        payload = {"left": left, "right": right, "step": self.state.step}
+        left_clean = _bounded_text(left, "contradiction left", self.limits.max_text_chars)
+        right_clean = _bounded_text(right, "contradiction right", self.limits.max_text_chars)
+        payload = {"left": left_clean, "right": right_clean, "step": self.state.step}
         contradiction = Contradiction(
             contradiction_id=_stable_id("con", payload),
-            left=left,
-            right=right,
-            degree=_clamp(degree),
-            context_gap=_clamp(context_gap),
-            distortion_risk=_clamp(distortion_risk),
-            suppression_risk=_clamp(suppression_risk),
+            left=left_clean,
+            right=right_clean,
+            degree=_unit(degree, "degree"),
+            context_gap=_unit(context_gap, "context_gap"),
+            distortion_risk=_unit(distortion_risk, "distortion_risk"),
+            suppression_risk=_unit(suppression_risk, "suppression_risk"),
         )
         self.state.contradictions.append(contradiction)
         self.state.contradictions = self.state.contradictions[-self.limits.max_contradictions :]
@@ -206,15 +312,20 @@ class AlistaireField:
         return contradiction
 
     def contradiction_energy(self) -> float:
-        sensitivity = max(0.0, self.state.laws.get("contradiction_sensitivity", 1.0))
+        sensitivity = self.state.laws["contradiction_sensitivity"]
         return sensitivity * sum(item.repair_cost for item in self.state.contradictions)
 
     def update_intent(self, evidence: Mapping[str, float], *, momentum: float = 0.7) -> dict[str, float]:
-        momentum = _clamp(momentum)
-        keys = set(self.state.intent) | set(evidence)
+        bounded_momentum = _unit(momentum, "momentum")
+        normalized_evidence: dict[str, float] = {}
+        for key, value in evidence.items():
+            if not isinstance(key, str) or not key.strip():
+                raise ValueError("evidence keys must be non-empty strings")
+            normalized_evidence[key.strip()] = _finite(value, f"evidence {key}")
+        keys = set(self.state.intent) | set(normalized_evidence)
         updated = {
-            key: momentum * self.state.intent.get(key, 0.0)
-            + (1.0 - momentum) * float(evidence.get(key, 0.0))
+            key: bounded_momentum * self.state.intent.get(key, 0.0)
+            + (1.0 - bounded_momentum) * normalized_evidence.get(key, 0.0)
             for key in keys
         }
         norm = sum(abs(value) for value in updated.values()) or 1.0
@@ -224,19 +335,52 @@ class AlistaireField:
         return dict(self.state.intent)
 
     def adapt_laws(self, deltas: Mapping[str, float], *, learning_rate: float = 0.1) -> dict[str, float]:
-        rate = _clamp(learning_rate)
+        rate = _unit(learning_rate, "learning_rate")
         for name, delta in deltas.items():
             if name.startswith("constitutional_"):
                 raise ConstitutionalViolation("constitutional invariants are not adaptive laws")
-            current = self.state.laws.get(name, 0.0)
-            self.state.laws[name] = _clamp(current + rate * float(delta), 0.0, 2.0)
+            if name not in ADAPTIVE_LAWS:
+                raise ConstitutionalViolation(f"unapproved adaptive law: {name}")
+            current = self.state.laws[name]
+            next_value = current + rate * _finite(delta, f"law delta {name}")
+            self.state.laws[name] = max(0.0, min(2.0, next_value))
         self.state.step += 1
         self._seal_state()
         return dict(self.state.laws)
 
+    def _validate_possibility(self, possibility: Possibility) -> None:
+        _bounded_text(possibility.action_id, "possibility action_id", 128)
+        _bounded_text(possibility.description, "possibility description", self.limits.max_text_chars)
+        for name in (
+            "truth",
+            "loyalty",
+            "clarity",
+            "autonomy",
+            "repair",
+            "beauty",
+            "harm",
+            "coercion",
+            "effort",
+            "risk",
+            "irreversibility",
+        ):
+            _unit(getattr(possibility, name), f"possibility {name}")
+        if not isinstance(possibility.metadata, dict):
+            raise ValueError("possibility metadata must be a JSON object")
+        if any(not isinstance(key, str) for key in possibility.metadata):
+            raise ValueError("possibility metadata keys must be strings")
+        try:
+            _canonical_json(possibility.metadata)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("possibility metadata must be finite canonical JSON") from exc
+
     def set_possibilities(self, possibilities: Iterable[Possibility]) -> None:
-        bounded = list(possibilities)[: self.limits.max_possibilities]
-        identifiers = [item.action_id for item in bounded]
+        bounded = list(possibilities)
+        if len(bounded) > self.limits.max_possibilities:
+            raise ValueError("too many possibilities; silent truncation is not permitted")
+        for possibility in bounded:
+            self._validate_possibility(possibility)
+        identifiers = [item.action_id.strip() for item in bounded]
         if len(identifiers) != len(set(identifiers)):
             raise ValueError("possibility action_id values must be unique")
         self.state.possibilities = bounded
@@ -244,6 +388,7 @@ class AlistaireField:
         self._seal_state()
 
     def score(self, possibility: Possibility) -> float:
+        self._validate_possibility(possibility)
         w = self.weights
         constitutional = (
             w.truth * possibility.truth
@@ -267,11 +412,9 @@ class AlistaireField:
         rejected: dict[str, str] = {}
         ranked: list[tuple[str, float]] = []
         for possibility in self.state.possibilities:
+            self._validate_possibility(possibility)
             if possibility.coercion > self.limits.coercion_ceiling:
                 rejected[possibility.action_id] = "coercion ceiling exceeded"
-                continue
-            if possibility.autonomy < 0.0:
-                rejected[possibility.action_id] = "negative autonomy contribution"
                 continue
             ranked.append((possibility.action_id, self.score(possibility)))
         ranked.sort(key=lambda item: (-item[1], item[0]))
@@ -296,9 +439,10 @@ class AlistaireField:
         }
 
     def _seal_state(self) -> None:
+        previous = self.state.state_hash or self.state.previous_hash
         payload = asdict(self.state)
+        payload["previous_hash"] = previous
         payload["state_hash"] = ""
-        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=dict)
-        digest = hashlib.sha256((self.state.previous_hash + canonical).encode("utf-8")).hexdigest()
-        self.state.previous_hash = self.state.state_hash or self.state.previous_hash
-        self.state.state_hash = digest
+        canonical = _canonical_json(payload)
+        self.state.previous_hash = previous
+        self.state.state_hash = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
