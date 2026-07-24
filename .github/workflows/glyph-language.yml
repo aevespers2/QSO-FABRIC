@@ -1,0 +1,167 @@
+name: QSO Glyph Language
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qso-glyph-language-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUBMITTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Initialize failure-path evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qso-glyph-language"
+          mkdir -p "$evidence"
+          {
+            printf 'repository=%s\n' "$GITHUB_REPOSITORY"
+            printf 'source_sha=%s\n' "$SUBMITTED_SHA"
+            printf 'workflow_run=%s\n' "$GITHUB_RUN_ID"
+            printf 'workflow_attempt=%s\n' "$GITHUB_RUN_ATTEMPT"
+          } > "$evidence/source-identity.txt"
+
+      - name: Check out exact submitted head
+        id: checkout
+        continue-on-error: true
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ env.SUBMITTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+          show-progress: false
+
+      - name: Set up Python
+        id: setup
+        continue-on-error: true
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+          cache: ""
+
+      - name: Assert exact clean source
+        id: source
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/qso-glyph-language"
+          {
+            test "${{ steps.checkout.outcome }}" = "success"
+            test "$(git rev-parse HEAD)" = "$SUBMITTED_SHA"
+            test -z "$(git status --porcelain)"
+          } > "$evidence/source-check.log" 2>&1
+          status=$?
+          cat "$evidence/source-check.log"
+          printf '%s\n' "$status" > "$evidence/source-check-exit-code.txt"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Validate glyph implementation and hostile inputs
+        id: validation
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/qso-glyph-language"
+          status=0
+          {
+            test "${{ steps.setup.outcome }}" = "success" || status=1
+            python -m unittest discover -s tests -p 'test_glyphs.py' -v || status=1
+            python - <<'PY' || status=1
+          from pathlib import Path
+
+          for root in (Path("qso_runtime"), Path("tests")):
+              for path in sorted(root.rglob("*.py")):
+                  compile(path.read_text(encoding="utf-8"), str(path), "exec")
+          PY
+            python -m qso_runtime.glyph_manifest --output "$evidence/manifest-a.json" || status=1
+            python -m qso_runtime.glyph_manifest --output "$evidence/manifest-b.json" || status=1
+            cmp "$evidence/manifest-a.json" "$evidence/manifest-b.json" || status=1
+            python - <<'PY' || status=1
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "qso-glyph-language"
+          value = json.loads((evidence / "manifest-a.json").read_text(encoding="utf-8"))
+          assert value["format"] == "QSO-GLYPH-1"
+          assert value["grid_size"] == 7
+          assert len(value["glyphs"]) == 11
+          assert len(value["manifest_sha256"]) == 64
+          assert all(glyph["glyph_id"].startswith("qg:") for glyph in value["glyphs"])
+          PY
+          } > "$evidence/validation.log" 2>&1
+          cat "$evidence/validation.log"
+          printf '%s\n' "$status" > "$evidence/validation-exit-code.txt"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Record deterministic evidence
+        id: evidence
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/qso-glyph-language"
+          {
+            python --version > "$evidence/python-version.txt" 2>&1
+            git status --porcelain --untracked-files=all > "$evidence/post-validation-status.txt"
+            sha256sum \
+              qso_runtime/glyphs.py \
+              qso_runtime/glyph_manifest.py \
+              tests/test_glyphs.py \
+              docs/QSO-GLYPH-1.md \
+              .github/workflows/glyph-language.yml \
+              "$evidence/manifest-a.json" \
+              > "$evidence/SHA256SUMS"
+            git diff --exit-code
+            git diff --cached --exit-code
+            test -z "$(git status --porcelain)"
+          } > "$evidence/evidence-check.log" 2>&1
+          status=$?
+          cat "$evidence/evidence-check.log"
+          printf '%s\n' "$status" > "$evidence/evidence-exit-code.txt"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload exact-head evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qso-glyph-language-${{ env.SUBMITTED_SHA }}
+          path: ${{ runner.temp }}/qso-glyph-language
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Fail closed after evidence retention
+        if: always()
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          SETUP_OUTCOME: ${{ steps.setup.outcome }}
+          SOURCE_STATUS: ${{ steps.source.outputs.status }}
+          VALIDATION_STATUS: ${{ steps.validation.outputs.status }}
+          EVIDENCE_STATUS: ${{ steps.evidence.outputs.status }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$CHECKOUT_OUTCOME" = "success"
+          test "$SETUP_OUTCOME" = "success"
+          test "$SOURCE_STATUS" = "0"
+          test "$VALIDATION_STATUS" = "0"
+          test "$EVIDENCE_STATUS" = "0"
