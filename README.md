@@ -12,28 +12,33 @@ python -m qso_runtime.four_qso_experiment \
   --output artifacts/four_qso_report.json
 ```
 
-The runner produces deterministic per-QSO reports, bounded message exchange, freeze-point hashes, and an append-only hash-chained event ledger.
+The runner produces bounded per-QSO reports, message exchange, freeze-point hashes, and an append-only hash-chained event ledger. Replay is expected to match for fixed inputs when the elapsed-time deadline does not change the executed round count; it is not an unconditional determinism claim.
 
 ## MCP simulation server
 
-QSO-FABRIC can be exposed to any MCP-compatible LLM or agent host as a bounded simulation runtime.
+QSO-FABRIC can be exposed to a local MCP-compatible host as a bounded research simulation runtime.
 
 ```bash
-pip install -r requirements-mcp.txt
+python -m pip install -r requirements-mcp.txt
 python -m qso_mcp_server.server --transport stdio
 ```
 
-For a shared local endpoint:
+Streamable HTTP is unauthenticated and disabled by default. Local use requires an explicit warning-bearing opt-in:
 
 ```bash
-python -m qso_mcp_server.server --transport streamable-http
+python -m qso_mcp_server.server \
+  --transport streamable-http \
+  --allow-unauthenticated-local-http
 ```
 
-The server exposes capability discovery, simulation execution, job retrieval, ledger verification, and deterministic replay. See [docs/qso-mcp-server.md](docs/qso-mcp-server.md) for client configuration and deployment guidance.
+The server exposes capability discovery, strict bounded execution, detached job retrieval, request/report digest verification, and conditional replay comparison. See [docs/qso-mcp-server.md](docs/qso-mcp-server.md) for the complete security, storage, dependency, provenance, validation, and deployment boundaries.
 
 ## Safety boundary
 
 - No shell, package-installation, credential, wallet, or unrestricted network authority is granted to QSOs.
-- Messages and rounds are bounded.
+- Messages, objectives, jobs, numeric domains, and rounds are bounded.
+- Boolean numeric coercion and non-finite JSON values are rejected.
 - The experiment stops at configured runtime limits.
-- Outputs are proposals and research artifacts requiring human review.
+- In-memory job records are detached from returned objects and are not durable.
+- Streamable HTTP is not approved for public exposure.
+- Outputs are non-authoritative proposals and research artifacts requiring human review.
