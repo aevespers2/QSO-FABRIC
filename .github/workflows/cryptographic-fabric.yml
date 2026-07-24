@@ -82,7 +82,8 @@ jobs:
           status=0
           {
             test "${{ steps.setup.outcome }}" = "success" || status=1
-            python -m unittest discover -s tests -p 'test_crypto_fabric.py' -v || status=1
+            python -m unittest discover -s tests -p 'test_crypto*.py' -v || status=1
+            python -m unittest discover -s tests -p 'test_oqs_kem_provider.py' -v || status=1
             python - <<'PY' || status=1
           from pathlib import Path
 
@@ -109,7 +110,10 @@ jobs:
             git status --porcelain --untracked-files=all > "$evidence/post-validation-status.txt"
             sha256sum \
               qso_runtime/crypto_fabric.py \
+              qso_runtime/providers/__init__.py \
+              qso_runtime/providers/oqs_kem.py \
               tests/test_crypto_fabric.py \
+              tests/test_oqs_kem_provider.py \
               docs/cryptographic-fabric.md \
               .github/workflows/cryptographic-fabric.yml \
               > "$evidence/SHA256SUMS"
