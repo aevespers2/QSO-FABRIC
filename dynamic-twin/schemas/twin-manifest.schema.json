@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://qso.fabric/schemas/dynamic-twin/twin-manifest.schema.json",
+  "title": "QSO Dynamic Twin Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {"const": "qso.fabric/v1"},
+    "kind": {"const": "DynamicTwin"},
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^twin:"},
+        "name": {"type": "string", "minLength": 1},
+        "parentTwinId": {"type": ["string", "null"], "pattern": "^twin:"},
+        "labels": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "state", "synchronization", "simulation", "governance"],
+      "properties": {
+        "scope": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {"type": {"type": "string", "minLength": 1}}
+        },
+        "entities": {"type": "array", "items": {"type": "object"}},
+        "relationships": {"type": "array", "items": {"type": "object"}},
+        "state": {
+          "type": "object",
+          "required": ["storage"],
+          "properties": {
+            "storage": {
+              "type": "object",
+              "required": ["temporal", "eventSourced"],
+              "properties": {
+                "temporal": {"const": true},
+                "eventSourced": {"const": true}
+              }
+            }
+          }
+        },
+        "behavior": {"type": "object"},
+        "synchronization": {
+          "type": "object",
+          "required": ["consistency"],
+          "properties": {
+            "targetLatency": {"type": "string"},
+            "consistency": {
+              "enum": ["strong", "bounded-staleness", "eventual", "snapshot-consistent", "probabilistic", "simulation-isolated"]
+            }
+          }
+        },
+        "simulation": {
+          "type": "object",
+          "required": ["enabled", "branching"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "branching": {"type": "boolean"}
+          }
+        },
+        "governance": {
+          "type": "object",
+          "required": ["externalWrites"],
+          "properties": {
+            "externalWrites": {"const": "deny-by-default"},
+            "untrustedInputsAreData": {"type": "boolean", "const": true}
+          }
+        }
+      }
+    }
+  }
+}
