@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "qso://schemas/common/envelope/0.1.0",
+  "title": "QSO Common Envelope",
+  "type": "object",
+  "required": ["qso", "payload"],
+  "properties": {
+    "qso": {
+      "type": "object",
+      "required": ["format", "format_version", "schema", "object_id", "created_at", "content_hash", "mutation_class", "payload_encoding"],
+      "properties": {
+        "format": {"type": "string", "pattern": "^QSO-[A-Z0-9]+(?:-[A-Z0-9]+)*$"},
+        "format_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "schema": {"type": "string"},
+        "object_id": {"type": "string", "pattern": "^qso:[a-z0-9-]+:.+$"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "modified_at": {"type": "string", "format": "date-time"},
+        "content_hash": {"type": "string", "pattern": "^(blake3|sha256):[A-Fa-f0-9]+$"},
+        "mutation_class": {"enum": ["immutable", "append-only", "externally-mutable", "self-proposable", "self-modifiable", "ephemeral", "derived", "constitutional", "mixed"]},
+        "payload_encoding": {"enum": ["json", "cbor", "binary", "reference"]},
+        "critical": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      },
+      "additionalProperties": true
+    },
+    "payload": {}
+  },
+  "additionalProperties": false
+}

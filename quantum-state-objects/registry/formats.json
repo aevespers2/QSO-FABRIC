@@ -1,0 +1,26 @@
+{
+  "registry_version": "0.1.0",
+  "namespace": "qso",
+  "families": [
+    {"name":"QSO-CORE","extension":".qso","category":"object","mutation_class":"constitutional"},
+    {"name":"QSO-MANIFEST","extension":".qsm","category":"object","mutation_class":"immutable"},
+    {"name":"QSO-GENOME","extension":".qsg","category":"cognitive","mutation_class":"self-proposable"},
+    {"name":"QSO-STATE","extension":".qss","category":"cognitive","mutation_class":"self-modifiable"},
+    {"name":"QSO-MEMORY","extension":".qmem","category":"cognitive","mutation_class":"mixed"},
+    {"name":"QSO-COGNITION","extension":".qcg","category":"cognitive","mutation_class":"self-proposable"},
+    {"name":"QSO-SELF","extension":".qself","category":"object","mutation_class":"self-proposable"},
+    {"name":"QSO-MUTATION","extension":".qmut","category":"lifecycle","mutation_class":"append-only"},
+    {"name":"QSO-ETHICS","extension":".qeth","category":"governance","mutation_class":"constitutional"},
+    {"name":"QSO-GOVERNANCE","extension":".qgov","category":"governance","mutation_class":"constitutional"},
+    {"name":"QSO-CAPABILITY","extension":".qcap","category":"operational","mutation_class":"externally-mutable"},
+    {"name":"QSO-EVENT","extension":".qevt","category":"lifecycle","mutation_class":"append-only"},
+    {"name":"QSO-TRACE","extension":".qtrace","category":"evidence","mutation_class":"append-only"},
+    {"name":"QSO-PROVENANCE","extension":".qprov","category":"evidence","mutation_class":"append-only"},
+    {"name":"QSO-SIGNATURE","extension":".qsig","category":"security","mutation_class":"immutable"},
+    {"name":"QSO-SNAPSHOT","extension":".qsnap","category":"storage","mutation_class":"immutable"},
+    {"name":"QSO-DELTA","extension":".qdelta","category":"storage","mutation_class":"immutable"},
+    {"name":"QSO-PATCH","extension":".qpatch","category":"storage","mutation_class":"self-proposable"},
+    {"name":"QSO-SCHEMA","extension":".qschema","category":"semantic","mutation_class":"immutable"},
+    {"name":"QSO-PACKAGE","extension":".qsp","category":"transport","mutation_class":"immutable"}
+  ]
+}
