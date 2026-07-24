@@ -10,7 +10,7 @@ States: `PROPOSED` · `READY` · `IN PROGRESS` · `BLOCKED` · `REVIEW` · `DONE
 - **Priority:** Formal acceptance and verification of the existing runtime comes before additional learning, data acquisition, visualization, economic behavior, or portfolio administration.
 - **Success criteria:** clean install and smoke command pass; repeated seeded runs produce identical canonical hashes; tampering is detected; runtime/message limits fail closed; interruption and rollback preserve evidence; no unapproved network, command, credential, repository-write, or cross-repository mutation path exists.
 - **Non-goals:** autonomous internet learning, self-modification, production orchestration, credentialed agents, payment settlement, claims of sentience/physical quantum execution, or acting as the control plane for all owned repositories.
-- **Release rationale:** QSO-FABRIC is the first executable portfolio integration artifact. A narrowly verified harness will expose contract defects safely before broader runtime, UI, or governance automation depends on it.
+- **Release rationale:** QSO-FABRIC is an executable portfolio integration artifact. A narrowly verified harness will expose contract defects safely before broader runtime, UI, or governance automation depends on it.
 
 ## Active chain
 
@@ -23,12 +23,16 @@ States: `PROPOSED` · `READY` · `IN PROGRESS` · `BLOCKED` · `REVIEW` · `DONE
 
 ## Closed scope conflict: repository bootstrap automation
 
-PR #1 proposed scheduled owner-wide automation that would write generic Markdown files and issues to other repositories using a broad token. The pull request was closed on 2026-07-16. No portfolio-bootstrap capability is accepted, scheduled, deployed, or part of the QSO-FABRIC runtime MVP, and P0–P3 retain their existing priority.
+PR #1 proposed scheduled owner-wide automation that would write generic Markdown files and issues to other repositories using a broad token. That proposal was closed on 2026-07-16 and remains outside the QSO-FABRIC runtime scope.
 
-The review evidence remains preserved for any future control-plane proposal. Any successor must:
+A later default-branch workflow contradicted that decision by retaining a six-hour schedule, broad write permissions, a repository-spanning secret, persisted checkout credentials, and direct default-branch and issue mutations. The bounded repair retires the schedule and live-write workflow path. The retained workflow is manual, public-repository, read-only, exact-head, and evidence-producing; it cannot set `MUSE_DRY_RUN=false` or `MUSE_WRITE_AUTHORIZED=true`.
+
+The script now also fails closed before any network mutation unless a separately approved direct execution supplies both conditions. This safeguard does not approve such an execution, credential, target list, or control-plane owner.
+
+Any future successor must:
 
 - be explicitly opt-in per repository rather than scanning all owned repositories by default;
-- default scheduled and manual runs to dry-run;
+- default all scheduled and manual runs to dry-run;
 - avoid duplicate sources of truth such as `TASK_CHAIN.md` alongside an existing `taskchain.md`;
 - create reviewable per-repository pull requests rather than writing directly to default branches;
 - use least-privilege credentials and document revocation, audit, retry, checkpoint, and rollback behavior;
@@ -39,7 +43,7 @@ The review evidence remains preserved for any future control-plane proposal. Any
 - throttle mutations and recover or roll back partial runs;
 - live in a dedicated governance/control repository unless ownership by QSO-FABRIC is explicitly approved.
 
-The five unresolved review findings for organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling are retained as rejected-proposal evidence, not active runtime blockers.
+The existing script fixes GET-only `404` handling and issue-pagination behavior, but live mutation remains unauthorized and unvalidated. Its retained write helpers are historical implementation material, not an activated capability.
 
 ## Builder rules
 
@@ -51,4 +55,6 @@ Record commits, Python/tool versions, commands/results, workflow URLs, seeds, fi
 
 - 2026-07-16 — Product review retained the runtime-verification priority and classified PR #1 as an out-of-scope portfolio-governance proposal requiring redesign or relocation before approval.
 - 2026-07-16 — Recorded five PR #1 reliability findings covering organization discovery, issue pagination, swallowed write failures, disabled-Issues handling, and mutating-request throttling/recovery; no portfolio reprioritization was made.
-- 2026-07-16 — Recorded closure of PR #1. The current scope conflict is resolved by exclusion; no bootstrap capability was accepted, and QSO-FABRIC remains focused on the bounded runtime baseline.
+- 2026-07-16 — Recorded closure of PR #1. The current scope conflict was intended to be resolved by exclusion.
+- 2026-07-24 — Verified that a later trusted-base workflow had reintroduced scheduled cross-repository writes and broad permissions, producing default-head failure and contradicting the release record.
+- 2026-07-24 — Converted the workflow to a manual read-only audit, added explicit mutation authorization guards, exact-head safety tests, retained evidence, and a synchronized punch list. No live write, token change, release, or deployment was authorized.
