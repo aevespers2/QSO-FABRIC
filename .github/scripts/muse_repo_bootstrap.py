@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Apply missing Muse Markdown files to every owned, non-archived repository.
+"""Audit missing Muse orientation files across public owned repositories.
 
-The script is intentionally additive: an existing repository-specific Markdown file
-is never overwritten. A GitHub issue is created once to request repository
-orientation and Muse task-chain review.
+The repository workflow invokes this module only as a manual, read-only audit.
+Mutation helpers remain available solely for a separately authorized direct run and
+fail closed unless both dry-run is disabled and an explicit write-authorization
+flag is present. Existing repository-specific files are never overwritten.
 """
 
 from __future__ import annotations
@@ -24,35 +25,45 @@ MARKER = "<!-- muse-repository-orientation-v1 -->"
 
 def request(method: str, path: str, token: str, payload: dict[str, Any] | None = None) -> Any:
     data = None if payload is None else json.dumps(payload).encode("utf-8")
-    req = urllib.request.Request(
-        API + path,
-        data=data,
-        method=method,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "User-Agent": "muse-repository-bootstrap",
-        },
-    )
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "muse-repository-bootstrap-audit",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(API + path, data=data, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req) as response:
             body = response.read()
             return json.loads(body) if body else None
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
-        if exc.code == 404:
+        if exc.code == 404 and method == "GET":
             return None
         raise RuntimeError(f"GitHub API {method} {path} failed: {exc.code} {body}") from exc
 
 
-def list_owned_repositories(owner: str, token: str) -> list[dict[str, Any]]:
+def list_owned_repositories(owner: str, token: str, public_only: bool) -> list[dict[str, Any]]:
     repos: list[dict[str, Any]] = []
     page = 1
     while True:
-        query = urllib.parse.urlencode({"affiliation": "owner", "per_page": 100, "page": page, "sort": "created"})
-        batch = request("GET", f"/user/repos?{query}", token) or []
-        repos.extend(repo for repo in batch if repo.get("owner", {}).get("login", "").lower() == owner.lower())
+        params: dict[str, Any] = {"per_page": 100, "page": page, "sort": "created"}
+        if public_only:
+            params["type"] = "owner"
+            path = f"/users/{urllib.parse.quote(owner, safe='')}/repos?{urllib.parse.urlencode(params)}"
+        else:
+            params["affiliation"] = "owner"
+            path = f"/user/repos?{urllib.parse.urlencode(params)}"
+        batch = request("GET", path, token) or []
+        if not isinstance(batch, list):
+            raise RuntimeError("GitHub repository listing returned a non-list response")
+        repos.extend(
+            repo
+            for repo in batch
+            if isinstance(repo, dict)
+            and repo.get("owner", {}).get("login", "").lower() == owner.lower()
+        )
         if len(batch) < 100:
             return repos
         page += 1
@@ -64,7 +75,24 @@ def file_exists(repo: str, path: str, branch: str, token: str) -> bool:
     return request("GET", f"/repos/{repo}/contents/{encoded}?ref={ref}", token) is not None
 
 
-def create_file(repo: str, path: str, content: str, branch: str, token: str, dry_run: bool) -> None:
+def require_write_authority(dry_run: bool, write_authorized: bool) -> None:
+    if not dry_run and not write_authorized:
+        raise RuntimeError(
+            "live repository mutation is blocked unless MUSE_WRITE_AUTHORIZED=true is supplied "
+            "by a separately approved direct execution"
+        )
+
+
+def create_file(
+    repo: str,
+    path: str,
+    content: str,
+    branch: str,
+    token: str,
+    dry_run: bool,
+    write_authorized: bool,
+) -> None:
+    require_write_authority(dry_run, write_authorized)
     if dry_run:
         return
     encoded = urllib.parse.quote(path, safe="/")
@@ -115,14 +143,33 @@ Prefer inspection before implementation. Preserve provenance, distinguish facts 
 
 
 def issue_already_exists(repo: str, token: str) -> bool:
-    query = urllib.parse.urlencode({"state": "all", "per_page": 100})
-    issues = request("GET", f"/repos/{repo}/issues?{query}", token) or []
-    return any(MARKER in (item.get("body") or "") for item in issues)
+    page = 1
+    while True:
+        query = urllib.parse.urlencode({"state": "all", "per_page": 100, "page": page})
+        issues = request("GET", f"/repos/{repo}/issues?{query}", token) or []
+        if not isinstance(issues, list):
+            raise RuntimeError(f"{repo}: issue listing returned a non-list response")
+        if any(MARKER in (item.get("body") or "") for item in issues if isinstance(item, dict)):
+            return True
+        if len(issues) < 100:
+            return False
+        page += 1
 
 
-def create_orientation_issue(repo: dict[str, Any], added: list[str], manifest: dict[str, Any], token: str, control_repo: str, dry_run: bool) -> None:
+def create_orientation_issue(
+    repo: dict[str, Any],
+    added: list[str],
+    manifest: dict[str, Any],
+    token: str,
+    control_repo: str,
+    dry_run: bool,
+    write_authorized: bool,
+) -> None:
+    require_write_authority(dry_run, write_authorized)
+    if dry_run:
+        return
     name = repo["full_name"]
-    if issue_already_exists(name, token) or dry_run:
+    if issue_already_exists(name, token):
         return
     request(
         "POST",
@@ -136,45 +183,139 @@ def create_orientation_issue(repo: dict[str, Any], added: list[str], manifest: d
     )
 
 
+def report_path(root: Path) -> Path:
+    configured = os.environ.get("MUSE_REPORT_PATH", "").strip()
+    return Path(configured) if configured else root / "muse-bootstrap-report.json"
+
+
+def write_report(path: Path, report: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     token = os.environ.get("GH_TOKEN", "").strip()
-    if not token:
-        print("MUSE_REPO_TOKEN is required and must have access to each target repository.", file=sys.stderr)
-        return 2
-
-    owner = os.environ.get("MUSE_OWNER", "aevespers2")
-    dry_run = os.environ.get("MUSE_DRY_RUN", "false").lower() == "true"
+    owner = os.environ.get("MUSE_OWNER", "aevespers2").strip() or "aevespers2"
+    dry_run = os.environ.get("MUSE_DRY_RUN", "true").lower() == "true"
+    write_authorized = os.environ.get("MUSE_WRITE_AUTHORIZED", "false").lower() == "true"
     control_repo = os.environ.get("MUSE_CONTROL_REPO", f"{owner}/QSO-FABRIC")
     root = Path(__file__).resolve().parents[2]
-    manifest = json.loads((root / ".github/muse/bootstrap-manifest.json").read_text())
+    output = report_path(root)
+
+    try:
+        require_write_authority(dry_run, write_authorized)
+    except RuntimeError as exc:
+        write_report(
+            output,
+            {
+                "status": "BLOCKED",
+                "owner": owner,
+                "dry_run": dry_run,
+                "write_authorized": write_authorized,
+                "errors": [str(exc)],
+                "repositories": [],
+            },
+        )
+        print(str(exc), file=sys.stderr)
+        return 3
+
+    if not token and not dry_run:
+        message = "a separately approved write token is required for live mutation"
+        write_report(
+            output,
+            {
+                "status": "BLOCKED",
+                "owner": owner,
+                "dry_run": dry_run,
+                "write_authorized": write_authorized,
+                "errors": [message],
+                "repositories": [],
+            },
+        )
+        print(message, file=sys.stderr)
+        return 2
+
+    manifest = json.loads((root / ".github/muse/bootstrap-manifest.json").read_text(encoding="utf-8"))
     template_root = root / manifest["source_root"]
     excluded = set(manifest.get("exclude_repositories", []))
-    report: list[dict[str, Any]] = []
+    repositories: list[dict[str, Any]] = []
 
-    for repo in list_owned_repositories(owner, token):
+    try:
+        owned = list_owned_repositories(owner, token, public_only=dry_run)
+    except Exception as exc:
+        write_report(
+            output,
+            {
+                "status": "ERROR",
+                "owner": owner,
+                "dry_run": dry_run,
+                "write_authorized": write_authorized,
+                "errors": [str(exc)],
+                "repositories": [],
+            },
+        )
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    for repo in owned:
         name = repo["full_name"]
         if repo.get("archived") or repo.get("disabled") or name in excluded:
             continue
         branch = repo["default_branch"]
-        added: list[str] = []
+        missing_files: list[str] = []
         errors: list[str] = []
         for filename in manifest["managed_files"]:
             try:
                 if not file_exists(name, filename, branch, token):
+                    missing_files.append(filename)
                     content = (template_root / filename).read_text(encoding="utf-8")
-                    create_file(name, filename, content, branch, token, dry_run)
-                    added.append(filename)
-            except Exception as exc:  # keep scanning other repositories
+                    create_file(
+                        name,
+                        filename,
+                        content,
+                        branch,
+                        token,
+                        dry_run,
+                        write_authorized,
+                    )
+            except Exception as exc:
                 errors.append(f"{filename}: {exc}")
         try:
-            create_orientation_issue(repo, added, manifest, token, control_repo, dry_run)
+            create_orientation_issue(
+                repo,
+                missing_files,
+                manifest,
+                token,
+                control_repo,
+                dry_run,
+                write_authorized,
+            )
         except Exception as exc:
             errors.append(f"orientation issue: {exc}")
-        report.append({"repository": name, "added": added, "errors": errors, "dry_run": dry_run})
+        repositories.append(
+            {
+                "repository": name,
+                "missing_files": missing_files,
+                "errors": errors,
+                "dry_run": dry_run,
+                "write_authorized": write_authorized,
+            }
+        )
 
-    Path("muse-bootstrap-report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-    failures = sum(bool(item["errors"]) for item in report)
-    print(json.dumps({"repositories_scanned": len(report), "repositories_with_errors": failures, "dry_run": dry_run}, indent=2))
+    failures = sum(bool(item["errors"]) for item in repositories)
+    report = {
+        "status": "PASS" if failures == 0 else "ERROR",
+        "owner": owner,
+        "coverage_mode": "public_owner_repositories" if dry_run else "authorized_owner_repositories",
+        "repositories_scanned": len(repositories),
+        "repositories_with_errors": failures,
+        "dry_run": dry_run,
+        "write_authorized": write_authorized,
+        "errors": [],
+        "repositories": repositories,
+    }
+    write_report(output, report)
+    print(json.dumps({key: report[key] for key in ("status", "coverage_mode", "repositories_scanned", "repositories_with_errors", "dry_run", "write_authorized")}, indent=2))
     return 1 if failures else 0
 
 
