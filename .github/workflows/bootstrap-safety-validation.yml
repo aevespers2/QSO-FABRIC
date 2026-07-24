@@ -1,0 +1,97 @@
+name: Bootstrap Safety Validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/scripts/muse_repo_bootstrap.py"
+      - ".github/workflows/muse-repository-bootstrap.yml"
+      - ".github/workflows/bootstrap-safety-validation.yml"
+      - "tests/test_muse_repo_bootstrap.py"
+      - "taskchain.md"
+      - "punchlist.md"
+      - "release.md"
+      - "changelog.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/scripts/muse_repo_bootstrap.py"
+      - ".github/workflows/muse-repository-bootstrap.yml"
+      - ".github/workflows/bootstrap-safety-validation.yml"
+      - "tests/test_muse_repo_bootstrap.py"
+      - "taskchain.md"
+      - "punchlist.md"
+      - "release.md"
+      - "changelog.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact submitted source
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Assert exact source
+        run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+
+      - name: Run bootstrap safety regressions
+        id: tests
+        continue-on-error: true
+        run: |
+          mkdir -p "${{ runner.temp }}/bootstrap-safety"
+          set +e
+          python -m unittest tests.test_muse_repo_bootstrap -v \
+            > "${{ runner.temp }}/bootstrap-safety/tests.txt" 2>&1
+          status=$?
+          printf '%s\n' "$status" > "${{ runner.temp }}/bootstrap-safety/exit-code.txt"
+          python -m py_compile .github/scripts/muse_repo_bootstrap.py \
+            >> "${{ runner.temp }}/bootstrap-safety/tests.txt" 2>&1
+          compile_status=$?
+          if [ "$compile_status" -ne 0 ]; then
+            printf '%s\n' "$compile_status" > "${{ runner.temp }}/bootstrap-safety/exit-code.txt"
+          fi
+          exit 0
+
+      - name: Record exact-head evidence
+        if: always()
+        run: |
+          printf '%s\n' "${{ github.event.pull_request.head.sha || github.sha }}" > "${{ runner.temp }}/bootstrap-safety/exact-head.txt"
+          printf '%s\n' "${{ github.run_id }}" > "${{ runner.temp }}/bootstrap-safety/workflow-run.txt"
+          python --version > "${{ runner.temp }}/bootstrap-safety/python-version.txt" 2>&1
+          git diff --exit-code > "${{ runner.temp }}/bootstrap-safety/source-integrity.txt" 2>&1
+          sha256sum \
+            .github/scripts/muse_repo_bootstrap.py \
+            .github/workflows/muse-repository-bootstrap.yml \
+            .github/workflows/bootstrap-safety-validation.yml \
+            tests/test_muse_repo_bootstrap.py \
+            > "${{ runner.temp }}/bootstrap-safety/source-SHA256SUMS"
+          sha256sum "${{ runner.temp }}/bootstrap-safety"/* > "${{ runner.temp }}/bootstrap-safety/SHA256SUMS"
+
+      - name: Upload bootstrap safety evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: bootstrap-safety-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/bootstrap-safety
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Fail closed after evidence retention
+        if: always()
+        run: test "$(cat '${{ runner.temp }}/bootstrap-safety/exit-code.txt')" = "0"
