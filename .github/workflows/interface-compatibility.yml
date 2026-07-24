@@ -1,0 +1,171 @@
+name: Interface Compatibility Conformance
+
+on:
+  push:
+    branches: [main, "ecosystem/**"]
+    paths:
+      - fixtures/qso-interface-compatibility-v1.json
+      - spec/QSO-INTERFACE-COMPATIBILITY-001.md
+      - tools/validate_interface_compatibility.py
+      - tests/test_validate_interface_compatibility.py
+      - .github/workflows/interface-compatibility.yml
+      - qso.manifest.json
+  pull_request:
+    paths:
+      - fixtures/qso-interface-compatibility-v1.json
+      - spec/QSO-INTERFACE-COMPATIBILITY-001.md
+      - tools/validate_interface_compatibility.py
+      - tests/test_validate_interface_compatibility.py
+      - .github/workflows/interface-compatibility.yml
+      - qso.manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interface-compatibility-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      EXPECTED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out exact submitted source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.EXPECTED_HEAD_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact clean source
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+          test -z "$(git status --porcelain)"
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Run hostile compatibility regressions
+        id: tests
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/interface-compatibility-evidence"
+          mkdir -p "$evidence"
+          python -m unittest -v tests/test_validate_interface_compatibility.py \
+            2>&1 | tee "$evidence/tests.log"
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Validate compatibility corpus
+        id: corpus
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/interface-compatibility-evidence"
+          python tools/validate_interface_compatibility.py \
+            fixtures/qso-interface-compatibility-v1.json \
+            2>&1 | tee "$evidence/validator.json"
+          status=${PIPESTATUS[0]}
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Compile validator outside source tree
+        id: compile
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/interface-compatibility-evidence"
+          python - <<'PY' >"$evidence/compile.log" 2>&1
+          import os
+          import py_compile
+
+          py_compile.compile(
+              "tools/validate_interface_compatibility.py",
+              cfile=os.path.join(os.environ["RUNNER_TEMP"], "validate_interface_compatibility.pyc"),
+              doraise=True,
+          )
+          PY
+          status=$?
+          cat "$evidence/compile.log"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Generate deterministic evidence
+        if: always()
+        shell: bash
+        env:
+          TEST_STATUS: ${{ steps.tests.outputs.status }}
+          CORPUS_STATUS: ${{ steps.corpus.outputs.status }}
+          COMPILE_STATUS: ${{ steps.compile.outputs.status }}
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/interface-compatibility-evidence"
+          mkdir -p "$evidence"
+          printf '%s\n' "$EXPECTED_HEAD_SHA" > "$evidence/exact-head.txt"
+          python --version > "$evidence/python-version.txt" 2>&1
+          git status --porcelain > "$evidence/worktree-status.txt"
+          sha256sum \
+            qso.manifest.json \
+            fixtures/qso-interface-compatibility-v1.json \
+            spec/QSO-INTERFACE-COMPATIBILITY-001.md \
+            tools/validate_interface_compatibility.py \
+            tests/test_validate_interface_compatibility.py \
+            .github/workflows/interface-compatibility.yml \
+            > "$evidence/source-sha256.txt"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["RUNNER_TEMP"]) / "interface-compatibility-evidence"
+          summary = {
+              "expected_head_sha": os.environ["EXPECTED_HEAD_SHA"],
+              "test_status": int(os.environ.get("TEST_STATUS") or 1),
+              "corpus_status": int(os.environ.get("CORPUS_STATUS") or 1),
+              "compile_status": int(os.environ.get("COMPILE_STATUS") or 1),
+              "contract_id": "QSO-INTERFACE-COMPATIBILITY-001",
+              "authority_effect": "none",
+              "ecosystem_admission": False,
+              "execution_authority": False,
+              "merge_authority": False,
+              "publication_authority": False,
+          }
+          (evidence / "summary.json").write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          find "$evidence" -type f ! -name evidence-sha256.txt -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "$evidence/evidence-sha256.txt"
+
+      - name: Retain exact-head evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: interface-compatibility-${{ env.EXPECTED_HEAD_SHA }}
+          path: ${{ runner.temp }}/interface-compatibility-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Fail closed on any incomplete gate
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${{ steps.tests.outputs.status }}" = "0"
+          test "${{ steps.corpus.outputs.status }}" = "0"
+          test "${{ steps.compile.outputs.status }}" = "0"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD_SHA"
+          test -z "$(git status --porcelain)"

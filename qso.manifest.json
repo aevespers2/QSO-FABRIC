@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0.0",
+  "component": "QSO-FABRIC",
+  "version": "0.1.0",
+  "purpose": "Provide a deterministic, bounded runtime and evidence-producing coordination fabric for Quantum State Objects.",
+  "conformance": {
+    "claimed_level": 1,
+    "evidence_path": "artifacts/conformance"
+  },
+  "runtime_bounds": {
+    "max_seconds": 300,
+    "max_rounds": 16,
+    "max_messages": 256,
+    "max_memory_mb": 2048,
+    "network_default": "deny"
+  },
+  "capabilities": [
+    {
+      "name": "bounded-message-exchange",
+      "authority": "execute",
+      "default": "allow",
+      "constraints": ["round limit", "message limit", "deterministic seed"]
+    },
+    {
+      "name": "external-network",
+      "authority": "execute",
+      "default": "deny",
+      "constraints": ["requires explicit adapter", "requires human authorization"]
+    },
+    {
+      "name": "consequential-action",
+      "authority": "propose",
+      "default": "deny",
+      "constraints": ["human review required"]
+    }
+  ],
+  "interfaces": [
+    {
+      "name": "qso-event-ledger",
+      "role": "producer",
+      "protocol": "append-only-json",
+      "schema_version": "1.0.0",
+      "idempotent": true,
+      "retry_limit": 0
+    },
+    {
+      "name": "qso-runtime-report",
+      "role": "producer",
+      "protocol": "json-file",
+      "schema_version": "1.0.0",
+      "idempotent": true,
+      "retry_limit": 0
+    }
+  ],
+  "governance": {
+    "review_component": "Jacob Redmond",
+    "deprecated_aliases": ["Aequitas"],
+    "human_override": true,
+    "audit_log": true
+  }
+}
