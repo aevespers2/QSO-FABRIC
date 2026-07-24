@@ -1,0 +1,154 @@
+name: Cryptographic Fabric
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qso-cryptographic-fabric-${{ github.event.pull_request.head.sha || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  crypto-fabric:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      SUBMITTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Initialize failure-path evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence="$RUNNER_TEMP/qso-cryptographic-fabric"
+          mkdir -p "$evidence"
+          {
+            printf 'repository=%s\n' "$GITHUB_REPOSITORY"
+            printf 'source_sha=%s\n' "$SUBMITTED_SHA"
+            printf 'workflow_run=%s\n' "$GITHUB_RUN_ID"
+            printf 'workflow_attempt=%s\n' "$GITHUB_RUN_ATTEMPT"
+          } > "$evidence/source-identity.txt"
+
+      - name: Check out exact submitted source
+        id: checkout
+        continue-on-error: true
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ env.SUBMITTED_SHA }}
+          fetch-depth: 1
+          persist-credentials: false
+          show-progress: false
+
+      - name: Set up Python
+        id: setup
+        continue-on-error: true
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.13"
+          cache: ""
+
+      - name: Assert exact clean source
+        id: source
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/qso-cryptographic-fabric"
+          {
+            test "${{ steps.checkout.outcome }}" = "success"
+            test "$(git rev-parse HEAD)" = "$SUBMITTED_SHA"
+            test -z "$(git status --porcelain)"
+          } > "$evidence/source-check.log" 2>&1
+          status=$?
+          cat "$evidence/source-check.log"
+          printf '%s\n' "$status" > "$evidence/source-check-exit-code.txt"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Run cryptographic-fabric tests and compile checks
+        id: validation
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/qso-cryptographic-fabric"
+          status=0
+          {
+            test "${{ steps.setup.outcome }}" = "success" || status=1
+            python -m unittest discover -s tests -p 'test_crypto*.py' -v || status=1
+            python -m unittest discover -s tests -p 'test_oqs_kem_provider.py' -v || status=1
+            python - <<'PY' || status=1
+          from pathlib import Path
+
+          for root in (Path("qso_runtime"), Path("tests")):
+              for path in sorted(root.rglob("*.py")):
+                  compile(path.read_text(encoding="utf-8"), str(path), "exec")
+          PY
+          } > "$evidence/validation.log" 2>&1
+          cat "$evidence/validation.log"
+          printf '%s\n' "$status" > "$evidence/validation-exit-code.txt"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Record deterministic evidence
+        id: evidence
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          evidence="$RUNNER_TEMP/qso-cryptographic-fabric"
+          {
+            python --version > "$evidence/python-version.txt" 2>&1
+            git status --porcelain --untracked-files=all > "$evidence/post-validation-status.txt"
+            sha256sum \
+              qso_runtime/crypto_fabric.py \
+              qso_runtime/providers/__init__.py \
+              qso_runtime/providers/oqs_kem.py \
+              tests/test_crypto_fabric.py \
+              tests/test_oqs_kem_provider.py \
+              docs/cryptographic-fabric.md \
+              .github/workflows/cryptographic-fabric.yml \
+              > "$evidence/SHA256SUMS"
+            git diff --exit-code
+            git diff --cached --exit-code
+            test -z "$(git status --porcelain)"
+          } > "$evidence/evidence-check.log" 2>&1
+          status=$?
+          cat "$evidence/evidence-check.log"
+          printf '%s\n' "$status" > "$evidence/evidence-exit-code.txt"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Upload exact-head evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: qso-cryptographic-fabric-${{ env.SUBMITTED_SHA }}
+          path: ${{ runner.temp }}/qso-cryptographic-fabric
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Fail closed after evidence retention
+        if: always()
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          SETUP_OUTCOME: ${{ steps.setup.outcome }}
+          SOURCE_STATUS: ${{ steps.source.outputs.status }}
+          VALIDATION_STATUS: ${{ steps.validation.outputs.status }}
+          EVIDENCE_STATUS: ${{ steps.evidence.outputs.status }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$CHECKOUT_OUTCOME" = "success"
+          test "$SETUP_OUTCOME" = "success"
+          test "$SOURCE_STATUS" = "0"
+          test "$VALIDATION_STATUS" = "0"
+          test "$EVIDENCE_STATUS" = "0"
