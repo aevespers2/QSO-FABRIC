@@ -1,0 +1,37 @@
+name: QSO MCP Validation
+
+on:
+  pull_request:
+    paths:
+      - "qso_mcp_server/**"
+      - "qso_runtime/**"
+      - "tests/test_qso_mcp_runtime.py"
+      - "requirements-mcp.txt"
+      - "docs/qso-mcp-server.md"
+      - ".github/workflows/qso-mcp-validation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "qso_mcp_server/**"
+      - "qso_runtime/**"
+      - "tests/test_qso_mcp_runtime.py"
+      - "requirements-mcp.txt"
+      - ".github/workflows/qso-mcp-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-mcp.txt pytest
+      - run: python -m pytest tests/test_qso_mcp_runtime.py
+      - run: python -m compileall -q qso_runtime qso_mcp_server
