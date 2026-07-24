@@ -2,6 +2,8 @@ import sys
 
 import pytest
 
+pytest.importorskip("mcp", reason="protocol tests require the optional MCP SDK")
+
 import qso_mcp_server.server as server
 
 
