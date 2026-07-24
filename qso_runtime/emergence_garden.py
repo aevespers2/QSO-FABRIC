@@ -1,19 +1,21 @@
-"""Emergence Garden: a deterministic lifecycle for QSO research ideas.
-
-The garden turns hypotheses into visible growth states without deleting failed
-paths. Every mutation is recorded in a hash-chained ledger so a garden can be
-replayed, audited, and rendered by a future UI.
-"""
+"""Deterministic, provenance-preserving lifecycle for bounded research ideas."""
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
 from hashlib import sha256
 import json
-from typing import Dict, Iterable, List, Mapping, Optional, Tuple
-from uuid import uuid4
+import math
+from types import MappingProxyType
+from typing import Iterable, Mapping, Optional
+
+_MAX_TITLE_CHARS = 240
+_MAX_HYPOTHESIS_CHARS = 8_000
+_MAX_TEXT_CHARS = 4_000
+_MAX_TAGS = 64
+_MAX_TAG_CHARS = 128
+_MAX_IDENTIFIER_CHARS = 256
 
 
 class GrowthStage(str, Enum):
@@ -26,45 +28,120 @@ class GrowthStage(str, Enum):
     DEAD_BRANCH = "dead_branch"
 
 
+def _bounded_text(value: object, name: str, limit: int) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a string")
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError(f"{name} cannot be empty")
+    if len(normalized) > limit:
+        raise ValueError(f"{name} exceeds {limit} characters")
+    return normalized
+
+
+def _strict_bool(value: object, name: str) -> bool:
+    if type(value) is not bool:
+        raise TypeError(f"{name} must be a Boolean")
+    return value
+
+
+def _confidence(value: object) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise TypeError("confidence must be a finite real number")
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError("confidence must be finite")
+    if not 0.0 <= number <= 1.0:
+        raise ValueError("confidence must be between 0 and 1")
+    return number
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        allow_nan=False,
+    )
+
+
+def _content_id(prefix: str, material: Mapping[str, object]) -> str:
+    digest = sha256(_canonical_json(material).encode("utf-8")).hexdigest()
+    return f"{prefix}:{digest[:32]}"
+
+
+def _normalize_tags(tags: Iterable[str]) -> tuple[str, ...]:
+    if isinstance(tags, (str, bytes)):
+        raise TypeError("tags must be an iterable of strings, not a string")
+    normalized: set[str] = set()
+    for tag in tags:
+        normalized.add(_bounded_text(tag, "tag", _MAX_TAG_CHARS))
+        if len(normalized) > _MAX_TAGS:
+            raise ValueError(f"tags may contain at most {_MAX_TAGS} unique values")
+    return tuple(sorted(normalized))
+
+
+def _identifier(value: object, name: str) -> str:
+    return _bounded_text(value, name, _MAX_IDENTIFIER_CHARS)
+
+
 @dataclass(frozen=True)
 class Evidence:
-    """A bounded evidence contribution attached to one idea."""
+    """One immutable, content-identified evidence contribution."""
 
     source: str
     summary: str
     confidence: float
     supports: bool = True
     reproducible: bool = False
-    evidence_id: str = field(default_factory=lambda: uuid4().hex)
+    evidence_id: str = field(default="")
 
     def __post_init__(self) -> None:
-        if not self.source.strip():
-            raise ValueError("evidence source cannot be empty")
-        if not self.summary.strip():
-            raise ValueError("evidence summary cannot be empty")
-        if not 0.0 <= self.confidence <= 1.0:
-            raise ValueError("confidence must be between 0 and 1")
+        source = _bounded_text(self.source, "evidence source", _MAX_TEXT_CHARS)
+        summary = _bounded_text(self.summary, "evidence summary", _MAX_TEXT_CHARS)
+        confidence = _confidence(self.confidence)
+        supports = _strict_bool(self.supports, "supports")
+        reproducible = _strict_bool(self.reproducible, "reproducible")
+        material = {
+            "source": source,
+            "summary": summary,
+            "confidence": confidence,
+            "supports": supports,
+            "reproducible": reproducible,
+        }
+        evidence_id = (
+            _identifier(self.evidence_id, "evidence_id")
+            if self.evidence_id
+            else _content_id("evidence", material)
+        )
+        object.__setattr__(self, "source", source)
+        object.__setattr__(self, "summary", summary)
+        object.__setattr__(self, "confidence", confidence)
+        object.__setattr__(self, "supports", supports)
+        object.__setattr__(self, "reproducible", reproducible)
+        object.__setattr__(self, "evidence_id", evidence_id)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GardenIdea:
     idea_id: str
     title: str
     hypothesis: str
     created_at: str
     stage: GrowthStage = GrowthStage.SEED
-    evidence: List[Evidence] = field(default_factory=list)
-    tags: Tuple[str, ...] = ()
-    notes: List[str] = field(default_factory=list)
+    evidence: tuple[Evidence, ...] = ()
+    tags: tuple[str, ...] = ()
+    notes: tuple[str, ...] = ()
     archived_reason: Optional[str] = None
 
     @property
     def support_score(self) -> float:
-        """Return a deterministic score in [-1, 1]."""
         if not self.evidence:
             return 0.0
         weighted = [
-            item.confidence * (1.15 if item.reproducible else 1.0)
+            item.confidence
+            * (1.15 if item.reproducible else 1.0)
             * (1.0 if item.supports else -1.0)
             for item in self.evidence
         ]
@@ -87,18 +164,18 @@ class GardenEvent:
 
 
 class EmergenceGarden:
-    """Manage QSO ideas as an auditable, provenance-preserving garden."""
+    """Manage ideas with immutable state values and a deterministic hash chain."""
 
     def __init__(self) -> None:
-        self._ideas: Dict[str, GardenIdea] = {}
-        self._events: List[GardenEvent] = []
+        self._ideas: dict[str, GardenIdea] = {}
+        self._events: list[GardenEvent] = []
 
     @property
     def ideas(self) -> Mapping[str, GardenIdea]:
-        return dict(self._ideas)
+        return MappingProxyType(dict(self._ideas))
 
     @property
-    def events(self) -> Tuple[GardenEvent, ...]:
+    def events(self) -> tuple[GardenEvent, ...]:
         return tuple(self._events)
 
     def plant(
@@ -109,90 +186,131 @@ class EmergenceGarden:
         tags: Iterable[str] = (),
         idea_id: Optional[str] = None,
     ) -> GardenIdea:
-        title = title.strip()
-        hypothesis = hypothesis.strip()
-        if not title or not hypothesis:
-            raise ValueError("title and hypothesis are required")
-        identifier = idea_id or uuid4().hex
+        title_value = _bounded_text(title, "title", _MAX_TITLE_CHARS)
+        hypothesis_value = _bounded_text(hypothesis, "hypothesis", _MAX_HYPOTHESIS_CHARS)
+        tag_values = _normalize_tags(tags)
+        identifier = (
+            _identifier(idea_id, "idea_id")
+            if idea_id is not None
+            else _content_id(
+                "idea",
+                {"title": title_value, "hypothesis": hypothesis_value, "tags": tag_values},
+            )
+        )
         if identifier in self._ideas:
             raise ValueError("idea_id already exists")
+        created_at = self._logical_time(len(self._events) + 1)
         idea = GardenIdea(
             idea_id=identifier,
-            title=title,
-            hypothesis=hypothesis,
-            created_at=self._now(),
-            tags=tuple(sorted({tag.strip() for tag in tags if tag.strip()})),
+            title=title_value,
+            hypothesis=hypothesis_value,
+            created_at=created_at,
+            tags=tag_values,
         )
         self._ideas[identifier] = idea
-        self._record("idea_planted", identifier, {"title": title, "stage": idea.stage.value})
+        self._record(
+            "idea_planted",
+            identifier,
+            {
+                "title": title_value,
+                "hypothesis_sha256": sha256(hypothesis_value.encode("utf-8")).hexdigest(),
+                "tags": list(tag_values),
+                "stage": idea.stage.value,
+            },
+        )
         return idea
 
     def add_evidence(self, idea_id: str, evidence: Evidence) -> GardenIdea:
+        if not isinstance(evidence, Evidence):
+            raise TypeError("evidence must be an Evidence instance")
         idea = self._require(idea_id)
         if any(item.evidence_id == evidence.evidence_id for item in idea.evidence):
             raise ValueError("evidence_id already exists on idea")
         old_stage = idea.stage
-        idea.evidence.append(evidence)
-        if idea.stage not in {GrowthStage.DEAD_BRANCH, GrowthStage.DORMANT}:
-            idea.stage = self._derive_stage(idea)
+        evidence_values = idea.evidence + (evidence,)
+        candidate = replace(idea, evidence=evidence_values)
+        if old_stage not in {GrowthStage.DEAD_BRANCH, GrowthStage.DORMANT}:
+            candidate = replace(candidate, stage=self._derive_stage(candidate))
+        self._ideas[idea_id] = candidate
         self._record(
             "evidence_added",
             idea_id,
             {
                 "evidence": asdict(evidence),
                 "old_stage": old_stage.value,
-                "new_stage": idea.stage.value,
-                "support_score": round(idea.support_score, 6),
+                "new_stage": candidate.stage.value,
+                "support_score": round(candidate.support_score, 6),
             },
         )
-        return idea
+        return candidate
 
     def add_note(self, idea_id: str, note: str) -> GardenIdea:
         idea = self._require(idea_id)
-        note = note.strip()
-        if not note:
-            raise ValueError("note cannot be empty")
-        idea.notes.append(note)
-        self._record("note_added", idea_id, {"note": note})
-        return idea
+        note_value = _bounded_text(note, "note", _MAX_TEXT_CHARS)
+        candidate = replace(idea, notes=idea.notes + (note_value,))
+        self._ideas[idea_id] = candidate
+        self._record("note_added", idea_id, {"note": note_value})
+        return candidate
 
     def set_dormant(self, idea_id: str, reason: str) -> GardenIdea:
         return self._archive(idea_id, GrowthStage.DORMANT, reason)
 
     def mark_dead_branch(self, idea_id: str, reason: str) -> GardenIdea:
-        """Preserve a rejected idea and its complete provenance."""
         return self._archive(idea_id, GrowthStage.DEAD_BRANCH, reason)
 
     def revive(self, idea_id: str, reason: str) -> GardenIdea:
         idea = self._require(idea_id)
+        reason_value = _bounded_text(reason, "revival reason", _MAX_TEXT_CHARS)
         old_stage = idea.stage
-        idea.archived_reason = None
-        idea.stage = self._derive_stage(idea)
+        candidate = replace(idea, archived_reason=None)
+        candidate = replace(candidate, stage=self._derive_stage(candidate))
+        self._ideas[idea_id] = candidate
         self._record(
             "idea_revived",
             idea_id,
-            {"reason": reason.strip(), "old_stage": old_stage.value, "new_stage": idea.stage.value},
+            {
+                "reason": reason_value,
+                "old_stage": old_stage.value,
+                "new_stage": candidate.stage.value,
+            },
         )
-        return idea
+        return candidate
 
     def snapshot(self) -> Mapping[str, object]:
-        ideas = []
+        rows: list[dict[str, object]] = []
         for idea in sorted(self._ideas.values(), key=lambda item: item.idea_id):
-            row = asdict(idea)
-            row["stage"] = idea.stage.value
-            row["support_score"] = round(idea.support_score, 6)
-            ideas.append(row)
-        return {
+            rows.append(
+                {
+                    "idea_id": idea.idea_id,
+                    "title": idea.title,
+                    "hypothesis": idea.hypothesis,
+                    "created_at": idea.created_at,
+                    "stage": idea.stage.value,
+                    "evidence": [asdict(item) for item in idea.evidence],
+                    "tags": list(idea.tags),
+                    "notes": list(idea.notes),
+                    "archived_reason": idea.archived_reason,
+                    "support_score": round(idea.support_score, 6),
+                }
+            )
+        snapshot = {
             "schema": "qso.emergence-garden/v1",
-            "ideas": ideas,
+            "clock": "deterministic-logical-sequence",
+            "ideas": rows,
             "ledger_head": self._events[-1].event_hash if self._events else "GENESIS",
             "event_count": len(self._events),
         }
+        _canonical_json(snapshot)
+        return snapshot
 
     def verify_ledger(self) -> bool:
         previous = "GENESIS"
         for expected_sequence, event in enumerate(self._events, start=1):
-            if event.sequence != expected_sequence or event.previous_hash != previous:
+            if event.sequence != expected_sequence:
+                return False
+            if event.timestamp != self._logical_time(expected_sequence):
+                return False
+            if event.previous_hash != previous:
                 return False
             material = self._event_material(
                 event.sequence,
@@ -209,18 +327,19 @@ class EmergenceGarden:
 
     def _archive(self, idea_id: str, stage: GrowthStage, reason: str) -> GardenIdea:
         idea = self._require(idea_id)
-        reason = reason.strip()
-        if not reason:
-            raise ValueError("archive reason cannot be empty")
-        old_stage = idea.stage
-        idea.stage = stage
-        idea.archived_reason = reason
+        reason_value = _bounded_text(reason, "archive reason", _MAX_TEXT_CHARS)
+        candidate = replace(idea, stage=stage, archived_reason=reason_value)
+        self._ideas[idea_id] = candidate
         self._record(
             "idea_archived",
             idea_id,
-            {"reason": reason, "old_stage": old_stage.value, "new_stage": stage.value},
+            {
+                "reason": reason_value,
+                "old_stage": idea.stage.value,
+                "new_stage": stage.value,
+            },
         )
-        return idea
+        return candidate
 
     @staticmethod
     def _derive_stage(idea: GardenIdea) -> GrowthStage:
@@ -238,17 +357,27 @@ class EmergenceGarden:
         return GrowthStage.SEED
 
     def _record(self, event_type: str, idea_id: str, payload: Mapping[str, object]) -> None:
+        event_type_value = _bounded_text(event_type, "event_type", 128)
+        identifier = _identifier(idea_id, "idea_id")
+        canonical_payload = json.loads(_canonical_json(dict(payload)))
         sequence = len(self._events) + 1
-        timestamp = self._now()
+        timestamp = self._logical_time(sequence)
         previous = self._events[-1].event_hash if self._events else "GENESIS"
-        material = self._event_material(sequence, timestamp, event_type, idea_id, payload, previous)
+        material = self._event_material(
+            sequence,
+            timestamp,
+            event_type_value,
+            identifier,
+            canonical_payload,
+            previous,
+        )
         self._events.append(
             GardenEvent(
                 sequence=sequence,
                 timestamp=timestamp,
-                event_type=event_type,
-                idea_id=idea_id,
-                payload=dict(payload),
+                event_type=event_type_value,
+                idea_id=identifier,
+                payload=MappingProxyType(canonical_payload),
                 previous_hash=previous,
                 event_hash=sha256(material).hexdigest(),
             )
@@ -268,17 +397,18 @@ class EmergenceGarden:
             "timestamp": timestamp,
             "event_type": event_type,
             "idea_id": idea_id,
-            "payload": payload,
+            "payload": dict(payload),
             "previous_hash": previous_hash,
         }
-        return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        return _canonical_json(body).encode("utf-8")
 
     def _require(self, idea_id: str) -> GardenIdea:
+        identifier = _identifier(idea_id, "idea_id")
         try:
-            return self._ideas[idea_id]
+            return self._ideas[identifier]
         except KeyError as exc:
-            raise KeyError("unknown garden idea: %s" % idea_id) from exc
+            raise KeyError(f"unknown garden idea: {identifier}") from exc
 
     @staticmethod
-    def _now() -> str:
-        return datetime.now(timezone.utc).isoformat()
+    def _logical_time(sequence: int) -> str:
+        return f"logical:{sequence:012d}"
