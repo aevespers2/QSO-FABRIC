@@ -1,5 +1,7 @@
 """QSO Fabric Dynamic Twin Engine primitives."""
 
+from .ledger import AppendOnlyLedger, DuplicateObservationError, LedgerEntry
+from .materializer import MaterializedEntityState, StateMaterializer
 from .models import (
     IntegrityProof,
     Observation,
@@ -12,10 +14,15 @@ from .models import (
 )
 
 __all__ = [
+    "AppendOnlyLedger",
+    "DuplicateObservationError",
     "IntegrityProof",
+    "LedgerEntry",
+    "MaterializedEntityState",
     "Observation",
     "ObservationType",
     "QualityScore",
+    "StateMaterializer",
     "StateStatus",
     "StateValue",
     "Subject",
